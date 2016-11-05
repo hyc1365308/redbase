@@ -1,8 +1,6 @@
 #include "redbase.h" 
 #include "rm_rid.h"
-#include "utils/pagedef.h"
-#include "fileio/FileManager.h"
-#include "bufmanager/BufPageManager.h"
+#include "pf.h"
 
 struct RM_FileHeader{
     int recordSize;           // record size in file
@@ -50,19 +48,11 @@ class RM_FileHandle{
 public:
     RM_FileHandle  ();                                  // Constructor
     ~RM_FileHandle ();                                  // Destructor
-    RC GetRec         (const RID &rid, RM_Record &rec) const;// Get a record                                                    
-    //rec会返回记录内容（如果调用成功）
-	//直接通过rid找到目标位置获取信息存入rec 
+    RC GetRec         (const RID &rid, RM_Record &rec) const;// Get a record 
     RC InsertRec      (const char *pData, RID &rid);       // Insert a new record,
                                                            //   return record id
-    //寻找可以插入的位置 
-	//插入
-	//把信息保存在rid中 
     RC DeleteRec      (const RID &rid);                    // Delete a record
-    //也是通过rid找到位置删除（修改bitmap的值） 
-    //更新相关信息
     RC UpdateRec      (const RM_Record &rec);              // Update a record
-    //通过rid找到位置然后替换 
     RC ForcePages     (PageNum pageNum = ALL_PAGES) const; // Write dirty page(s)
                                                            //   to disk                                                      
     //调用close 
@@ -92,23 +82,11 @@ public:
         delete bpm;
     }; // Destructor
     RC CreateFile  (const char *fileName, int recordSize);  
-    //避免重复 
-    //调用下层的createfile
-	//创建文件头
-	//
                                                  // Create a new file
     RC DestroyFile (const char *fileName);       // Destroy a file
-    //直接删除（要调用下层接口） 
     RC OpenFile    (const char *fileName, RM_FileHandle &fileHandle);
                                                  // Open a file
-    //打开文件，读取文件头
-	//把文件头的信息传递到filehandle类中保存下来
-	//需要传递fm参数 
-	// bpm = new BufPageManager(fm);
     RC CloseFile   (RM_FileHandle &fileHandle);  // Close a file
-    // 判断头页有没有被修改，如果有就markdirty
-	//调用close函数更新全部页
-	//再调用bpm.fileManager的closefile 
     
 private:
 	BufPageManager* bpm;

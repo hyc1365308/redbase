@@ -42,7 +42,7 @@ SM_SOURCES     =
 QL_SOURCES     = 
 UTILS_SOURCES  = 
 PARSER_SOURCES = 
-TESTER_SOURCES = 
+TESTER_SOURCES = pf_test1.cc pf_test2.cc pf_test3.cc
 
 PF_OBJECTS     = $(addprefix $(BUILD_DIR), $(PF_SOURCES:.cc=.o))
 RM_OBJECTS     = $(addprefix $(BUILD_DIR), $(RM_SOURCES:.cc=.o))

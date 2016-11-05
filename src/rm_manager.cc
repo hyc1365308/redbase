@@ -19,8 +19,6 @@ RC RM_Manager::CreateFile(const char *fileName,int recordSize){
 	int bitmapSize = numRecordsPerPage / 8;
 	if (bitmapSize * 8 < numRecordsPerPage) bitmapSize ++;//enough place for bitmap
 	//bitmapSize + numRecordsPerPage * recordSize + pageHeaderSize <= PAGE_SIZE
-	
-	//需要判断文件是否已经存在 
 		
 	//create file
 	if (!this->fm->createFile(fileName))
