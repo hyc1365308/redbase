@@ -16,12 +16,11 @@ typedef int SlotNum;
 // RID: Record id interface
 //
 class RID {
-  static const PageNum INVALID_PAGE = -1;
-  static const SlotNum INVALID_SLOT = -1;
+    static const PageNum INVALID_PAGE = -1;
+    static const SlotNum INVALID_SLOT = -1;
 public:
     RID();                                         // Default constructor
     RID(PageNum pageNum, SlotNum slotNum);
-    ~RID();                                        // Destructor
     RID& operator= (const RID &rid);               // Copies RID
     bool operator== (const RID &rid) const;
 
@@ -29,6 +28,8 @@ public:
     RC GetSlotNum(SlotNum &slotNum) const;         // Return slot number
 
     RC isValidRID() const; // checks if it is a valid RID
+    PageNum Page(){ return page; }
+    SlotNum Slot(){ return slot; }
 
 private:
     PageNum page;

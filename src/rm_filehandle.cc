@@ -13,10 +13,9 @@ RM_FileHandle::RM_FileHandle(){
 RM_FileHandle::~RM_FileHandle(){
   openedFH = false; // disassociate from fileHandle from an open file
 }
+
 bool RM_FileHandle::isValidFH() const{
-  if(openedFH == true)
-    return true;
-  return false;
+  return openedFH;
 }
 
 RC RM_FileHandle::CheckBitSet(char *bitmap, int size, int bitnum, bool &set) const{
@@ -84,19 +83,23 @@ RC RM_FileHandle::GetRec (const RID &rid, RM_Record &rec) const{
   RC rc = 0;
   PageNum page;
   SlotNum slot;
-  if(rc=rid.isValidRID()){
-  	return 1;
+  if(rc = rid.isValidRID()){
+  	return (rc);
   }
   rid.GetPageNum(page);
   rid.GetSlotNum(slot);
   // Retrieves the appropriate page, and its bitmap and pageheader 
   // contents
-  int index;
-  BufType b = bpm->getPage(this->fileID, page, index);
+  PF_PageHandle ph;
+  char *pData;
+  if (rc = pf_fh.GetThisPage(page, ph))
+    return (rc);
+  if (rc = ph.GetData(pData))
+    return (rc);
   char *bitmap;
   RM_PageHeader *pageheader;
-  pageheader = (struct RM_PageHeader *) b;
-  bitmap = (char*)b + header.bitmapOffset;
+  pageheader = (struct RM_PageHeader *) pData;
+  bitmap = pData + header.bitmapOffset;
 
   // Check if there really exists a record here according to the header
   bool recordExists;
@@ -108,7 +111,8 @@ RC RM_FileHandle::GetRec (const RID &rid, RM_Record &rec) const{
   }
 
   // Set the record and return it
-  if((rc = rec.SetRecord(rid, bitmap + (header.bitmapSize) + slot*(header.recordSize), 
+  if((rc = rec.SetRecord(rid, 
+    bitmap + (header.bitmapSize) + slot * (header.recordSize), 
     header.recordSize)))
     goto cleanup_and_exit;
 
@@ -134,12 +138,16 @@ RC RM_FileHandle::UpdateRec (const RM_Record &rec) {
   rid.GetSlotNum(slot);
 
   // gets the page, bitmap and pageheader for this page that holds the record
-  int index;
-  BufType b = bpm->getPage(this->fileID, page, index);
+  PF_PageHandle ph;
+  char *pData;
+  if (rc = pf_fh.GetThisPage(page, ph))
+    return (rc);
+  if (rc = ph.GetData(pData))
+    return (rc);
   char *bitmap;
   struct RM_PageHeader *pageheader;
-  pageheader = (struct RM_PageHeader *) b;
-  bitmap = (char*)b + header.bitmapOffset;
+  pageheader = (struct RM_PageHeader *) pData;
+  bitmap = pData + header.bitmapOffset;
 
   // Check if there really exists a record here according to the header
   bool recordExists;
@@ -156,7 +164,7 @@ RC RM_FileHandle::UpdateRec (const RM_Record &rec) {
     goto cleanup_and_exit;
   memcpy(bitmap + (header.bitmapSize) + slot*(header.recordSize),
     recData, header.recordSize);
-  bpm->markDirty(index);
+  pf_fh.MarkDirty(page);
   // always unpin the page before returning
   cleanup_and_exit:
   //bpm->release(index);
@@ -181,16 +189,21 @@ RC RM_FileHandle::InsertRec (const char *pData, RID &rid) {
   // retrieve the page's bitmap and header
   char *bitmap;
   struct RM_PageHeader *pageheader;
-  int index;
-  BufType b = bpm->getPage(this->fileID, header.firstFreePage, index);
-  pageheader = (struct RM_PageHeader *) b;
-  bitmap = (char*)b + header.bitmapOffset;
+  PF_PageHandle ph;
+  char *pData_temp;
+  if (rc = pf_fh.GetThisPage(header.firstFreePage, ph))
+    return (rc);
+  if (rc = ph.GetData(pData_temp))
+    return (rc);
+  pageheader = (struct RM_PageHeader *) pData_temp;
+  bitmap = pData_temp + header.bitmapOffset;
 
   // gets the first free slot on the page and set that bit to mark
   // it as occupied
-  if((rc = GetFirstZeroBit(bitmap, header.numRecordsPerPage, slot)))
+  page = header.numRecordsPerPage;
+  if((rc = GetFirstZeroBit(bitmap, page, slot)))
   	goto cleanup_and_exit;
-  if((rc = SetBit(bitmap, header.numRecordsPerPage, slot)))
+  if((rc = SetBit(bitmap, page, slot)))
     goto cleanup_and_exit;
 
   // copy the contents. update the header to reflect that one more
@@ -199,25 +212,27 @@ RC RM_FileHandle::InsertRec (const char *pData, RID &rid) {
     pData, header.recordSize);
   (pageheader->numRecords)++;
   rid = RID(page, slot); // set the RID to return the location of record
-  bpm->markDirty(index);
+  pf_fh.MarkDirty(page);
   // if page is full, update the free-page-list in the file header
   if(pageheader->numRecords == header.numRecordsPerPage){
     header.firstFreePage = pageheader->nextFreePage;
-    headerModified=true;
+    headerModified = true;
     if(header.firstFreePage=-1){
-    	 RM_PageHeader *temppageheader;
-    	 char *tempbitmap;
-    	 int tempindex;
-  		BufType tempb = bpm->allocPage(this->fileID, header.numPages, tempindex, false);
-  		temppageheader = (struct RM_PageHeader *) tempb;
-  		tempbitmap = (char* )tempb + header.bitmapOffset;
+    	RM_PageHeader *temppageheader;
+    	char *tempbitmap;
+      if (rc = pf_fh.GetThisPage(header.numPages, ph))
+        return (rc);
+      if (rc = ph.GetData(pData_temp))
+        return (rc);
+  		temppageheader = (struct RM_PageHeader *) pData_temp;
+  		tempbitmap = pData_temp + header.bitmapOffset;
   		temppageheader->nextFreePage = header.firstFreePage;
   		temppageheader->numRecords = 0;
   		if((rc = ResetBitmap(tempbitmap, header.bitmapSize)))
     		return (rc);
   		//ResetBitmap(tempbitmap,header.bitmapSize);
-  		bpm->markDirty(tempindex);
-  		header.firstFreePage=header.numPages;
+  		pf_fh.MarkDirty(header.numPages);
+  		header.firstFreePage = header.numPages;
   		header.numPages++;
     }
   }
@@ -242,12 +257,16 @@ RC RM_FileHandle::DeleteRec (const RID &rid) {
   rid.GetSlotNum(slot);
 
   // Get this page, its bitmap, and its header
-  int index;
-  BufType b = bpm->getPage(this->fileID, page, index);
+  PF_PageHandle ph;
+  char *pData;
+  if (rc = pf_fh.GetThisPage(page, ph))
+    return (rc);
+  if (rc = ph.GetData(pData))
+    return (rc);
   char *bitmap;
   struct RM_PageHeader *pageheader;
-  pageheader = (struct RM_PageHeader*)b;
-  bitmap = (char *)b + header.bitmapOffset;
+  pageheader = (struct RM_PageHeader*)pData;
+  bitmap = pData + header.bitmapOffset;
 
   // Check if there really exists a record here according to the header
   bool recordExists;
@@ -262,7 +281,7 @@ RC RM_FileHandle::DeleteRec (const RID &rid) {
   if((rc = ResetBit(bitmap, header.numRecordsPerPage, slot)))
     goto cleanup_and_exit;
   pageheader->numRecords--;
-  bpm->markDirty(index);
+  pf_fh.MarkDirty(page);
   // update the free list if this page went from full to not full
   if(pageheader->numRecords == header.numRecordsPerPage - 1){
     pageheader->nextFreePage = header.firstFreePage;
