@@ -34,6 +34,15 @@ struct RM_FileHeader{
     int bitmapOffset;         // location in bytes of where the bitmap starts
                               // in the page headers
     int bitmapSize;           // size of bitmaps in the page headers
+    RM_FileHeader(RM_FileHeader *fh){
+        recordSize = fh->recordSize;
+        numRecordsPerPage = fh->numRecordsPerPage;
+        numPages = fh->numPages;
+        firstFreePage = fh->firstFreePage;
+        bitmapOffset = fh->bitmapOffset;
+        bitmapSize = fh->bitmapSize;
+    }
+
 };
 
 //
@@ -77,6 +86,7 @@ private:
 //
 class RM_FileHandle {
     friend class RM_Manager;
+    friend class RM_FileScan;
 public:
     RM_FileHandle ();
     ~RM_FileHandle();
@@ -95,21 +105,28 @@ public:
 private:
     bool isValidFH() const;
     RC CheckBitSet(char *bitmap, int size, int bitnum, bool &set) const;
-    RC GetFirstZeroBit(char *bitmap, int size, int &location);
+    RC GetFirstZeroBit(char *bitmap, int size, int &location) const;
+    RC GetNextOneBit(char *bitmap, int size, int bitnum, int &nextbit) const;
     RC SetBit(char *bitmap, int size, int bitnum);
     RC ResetBit(char *bitmap, int size, int bitnum);
     RC ResetBitmap(char *bitmap, int size);
     int NumBitsToCharSize(int size);
-    RM_FileHeader header;
+    RM_FileHeader* header;
     bool openedFH;
     bool headerModified;
-    PF_FileHandle pf_fh;
+    PF_FileHandle* pf_fh;
+
+    //only for filescan
+    bool isValidFileHeader() const;
+    RC GetNextRecord(PageNum &currentPage, SlotNum &currentSlot, RM_Record &temprec) const;
 };
 
 //
 // RM_FileScan: condition-based scan of records in the file
 //
 class RM_FileScan {
+    static const PageNum INVALID_PAGE_NUM = -1;
+    static const SlotNum INVALID_SLOT_NUM = -1;
 public:
     RM_FileScan  ();
     ~RM_FileScan ();
@@ -126,9 +143,18 @@ public:
 
 private:
     bool openScan;
-    bool (*comparator) (void * , void *, AttrType, int);
+    bool (*comparator) (void * value1, void * value2, AttrType attrType, int attrLength);
+    const RM_FileHandle* fh;
+
     ClientHint pinHint;
     AttrType attrType;
+    int attrLength;
+    int attrOffset;
+    void* value;
+
+
+    PageNum currentPage;    //default:1
+    SlotNum currentSlot;    //default:-1
 };
 
 //
@@ -137,7 +163,6 @@ private:
 class RM_Manager {
 public:
     RM_Manager    (PF_Manager &pfm);
-    ~RM_Manager   ();
 
     RC CreateFile (const char *fileName, int recordSize);
     RC DestroyFile(const char *fileName);
@@ -145,7 +170,7 @@ public:
 
     RC CloseFile  (RM_FileHandle &fileHandle);
 private:
-    PF_Manager pfm; // reference to program's PF_Manager
+    PF_Manager *pfm; // reference to program's PF_Manager
 };
 
 //
@@ -153,6 +178,23 @@ private:
 //
 void RM_PrintError(RC rc);
 
-#define RM_EOF START_RM_ERR-1
+#define RM_EOF                 (START_RM_WARN + 0) // end of file
+#define RM_BITMAPEOF           (START_RM_WARN + 1) // end of the bitmap
+#define RM_LASTWARN            RM_EOF
+
+#define RM_INVALIDFILEHEADER   (START_RM_ERR - 0) // invalid fileheader
+#define RM_INVALIDRID          (START_RM_ERR - 1) // invalid RID
+#define RM_INVALIDRECORDSIZE   (START_RM_ERR - 2) // invalid recordsize
+#define RM_INVALIDFILEHANDLE   (START_RM_ERR - 3) // invalid fileHandle
+#define RM_INVALIDCOMPOP       (START_RM_ERR - 4) // invalid CompOp
+#define RM_INVALIDPINHINT      (START_RM_ERR - 5) // invalid pinHint
+#define RM_INVALIDATTRLENGTH   (START_RM_ERR - 6) // invalid attrLength
+#define RM_INVALIDATTRTYPE     (START_RM_ERR - 7) // invalid AttrType
+#define RM_RECORDDATAERROR     (START_RM_ERR - 8) // cannot get the recorddata
+#define RM_NULLRECPOINTER      (START_RM_ERR - 9) // record's pointer is null
+#define RM_RECORDEXISTED       (START_RM_ERR - 10) // the slot already has a record
+#define RM_RECORDNOTEXISTED    (START_RM_ERR - 11) // the slot not have a record
+#define RM_BITNUMBOUND         (START_RM_ERR - 12) // the bitnum too big( >size )
+#define RM_LASTERROR           RM_BITNUMBOUND
 
 #endif

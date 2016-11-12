@@ -1,4 +1,4 @@
-#include "rm_rid.h"
+#include "rm.h"
 
 RID::RID(PageNum pageNum,SlotNum slotNum){
 	this->page = pageNum;
@@ -17,10 +17,10 @@ RID& RID::operator=(const RID &rid){
 }
 
 bool RID::operator==(const RID &rid) const{
-	if (this->page == rid.page)
-		if (this->slot == rid.slot)
-			return true;
-	else return false;
+	if (this->page == rid.page && this->slot == rid.slot)
+		return true;
+	else 
+		return false;
 }
 
 RC RID::GetPageNum(PageNum &pageNum) const{
@@ -35,5 +35,5 @@ RC RID::GetSlotNum(SlotNum &slotNum) const{
 
 RC RID::isValidRID() const{
 	if (this->page >= 0 && this->slot >= 0) return 0;
-	else return 1;//RM_isValid
+	else return RM_INVALIDRID;//RM_isValid
 }

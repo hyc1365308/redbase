@@ -33,7 +33,7 @@ RM_Record& RM_Record::operator= (const RM_Record &record){
  */
 RC RM_Record::GetData(char *&pData) const {
 	if(data == NULL || size == INVALID_RECORD_SIZE)
-		return 1;
+		return RM_RECORDDATAERROR;
 	pData = data;
 	return (0);
 }
@@ -56,13 +56,13 @@ RC RM_Record::GetRid (RID &rid) const {
 RC RM_Record::SetRecord(RID rec_rid, char *recData, int rec_size){
 	RC rc;
 	if((rc = rec_rid.isValidRID()))
-		return 1;
+		return RM_INVALIDRID;
 	if(rec_size <= 0 )
-		return 1;
+		return RM_INVALIDRECORDSIZE;
 	rid = rec_rid;
 
 	if(recData == NULL)
-		return 1;
+		return RM_NULLRECPOINTER;
 	size = rec_size;
 	if (data != NULL)
 		delete [] data;

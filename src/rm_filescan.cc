@@ -1,13 +1,81 @@
 #include "rm.h"
 #include "redbase.h" 
+#include <cstring>
+#include <cstdio>
+#include <cstdlib>
 
 RM_FileScan::RM_FileScan(){
 	this->openScan = false;
+	this->fh = NULL;
+	this->value = NULL;
 }
 
-void RM_FileScan::readFileHeader(const RM_FileHandle &fileHandle){
-	RM_FileHeader fh = filehandle.
+RM_FileScan::~RM_FileScan(){
+	free(this->value);
 }
+
+//
+// comparator functions
+//
+bool default_comp(void * value1, void * value2, AttrType attrtype, int attrLength){
+  return true;
+}
+
+bool equal(void * value1, void * value2, AttrType attrtype, int attrLength){
+  switch(attrtype){
+    case FLOAT: return (*(float *)value1 == *(float*)value2);
+    case INT: return (*(int *)value1 == *(int *)value2) ;
+    default:
+      return (strncmp((char *) value1, (char *) value2, attrLength) == 0); 
+  }
+}
+
+bool less_than(void * value1, void * value2, AttrType attrtype, int attrLength){
+  switch(attrtype){
+    case FLOAT: return (*(float *)value1 < *(float*)value2);
+    case INT: return (*(int *)value1 < *(int *)value2) ;
+    default: 
+      return (strncmp((char *) value1, (char *) value2, attrLength) < 0);
+  }
+}
+
+bool greater_than(void * value1, void * value2, AttrType attrtype, int attrLength){
+  switch(attrtype){
+    case FLOAT: return (*(float *)value1 > *(float*)value2);
+    case INT: return (*(int *)value1 > *(int *)value2) ;
+    default: 
+      return (strncmp((char *) value1, (char *) value2, attrLength) > 0);
+  }
+}
+
+bool less_than_or_eq_to(void * value1, void * value2, AttrType attrtype, int attrLength){
+  switch(attrtype){
+    case FLOAT: return (*(float *)value1 <= *(float*)value2);
+    case INT: return (*(int *)value1 <= *(int *)value2) ;
+    default: 
+      return (strncmp((char *) value1, (char *) value2, attrLength) <= 0);
+  }
+}
+
+bool greater_than_or_eq_to(void * value1, void * value2, AttrType attrtype, int attrLength){
+  switch(attrtype){
+    case FLOAT: return (*(float *)value1 >= *(float*)value2);
+    case INT: return (*(int *)value1 >= *(int *)value2) ;
+    default: 
+      return (strncmp((char *) value1, (char *) value2, attrLength) >= 0);
+  }
+}
+
+bool not_equal(void * value1, void * value2, AttrType attrtype, int attrLength){
+  switch(attrtype){
+    case FLOAT: return (*(float *)value1 != *(float*)value2);
+    case INT: return (*(int *)value1 != *(int *)value2) ;
+    default: 
+      return (strncmp((char *) value1, (char *) value2, attrLength) != 0);
+  }
+}
+
+
 
 RC RM_FileScan::OpenScan(const RM_FileHandle &fileHandle,  // Initialize file scan
                      AttrType      attrType,
@@ -16,5 +84,96 @@ RC RM_FileScan::OpenScan(const RM_FileHandle &fileHandle,  // Initialize file sc
                      CompOp        compOp,
                      void          *value,
                      ClientHint    pinHint){
+	//check if the input is Invalid
+	//check fileHandle
+	if (!fileHandle.isValidFH())
+		return RM_INVALIDFILEHANDLE;
+	//check attrType & attrLength
+	switch (attrType){
+		case INT  :	
+		case FLOAT:	if (attrLength != 4)
+						return RM_INVALIDATTRLENGTH;//Invalid value;
+					break;
+
+		case STRING:if ((attrLength < 1) || (attrLength > MAXSTRINGLEN))
+						return RM_INVALIDATTRLENGTH;//Invalid value
+					break;
+
+		default :	return RM_INVALIDATTRTYPE;//Invalid AttrType
+	}
+	//check attrOffset
+	int maxValidRecordSize = attrLength + attrOffset;
+	if (maxValidRecordSize > fileHandle.header->recordSize)
+		return RM_INVALIDFILEHEADER;//Invalid attrLength and Offset
+
+	//check compOp
+	switch (compOp){
+		case NO_OP : this->comparator = &default_comp; break;
+		case EQ_OP : this->comparator = &equal; break;
+		case NE_OP : this->comparator = &not_equal; break;
+		case LT_OP : this->comparator = &less_than; break;
+		case GT_OP : this->comparator = &greater_than; break;
+		case LE_OP : this->comparator = &less_than_or_eq_to; break;
+		case GE_OP : this->comparator = &greater_than_or_eq_to; break;
+		default:	 return RM_INVALIDCOMPOP;//Invalid AttrType
+	}
+	//check value
+	if (value == NULL){
+		if (compOp != NO_OP) return RM_NULLRECPOINTER;
+	}else{
+		this->value = (void *) malloc(attrLength);
+		memcpy(this->value, value, attrLength);
+	}
+
+	//check pinHint
+	switch (pinHint){
+		case NO_HINT : this->pinHint = pinHint;break;
+		default		 : return RM_INVALIDPINHINT;//Invalid ClientHint
+	}
+
+	this->attrType = attrType;
+	this->attrOffset = attrOffset;
+	this->attrLength = attrLength;
+	if ( !fileHandle.isValidFileHeader() ){
+		return RM_INVALIDFILEHEADER;//Invalid fileheader
+	}
+	this->fh = &fileHandle;
+
+
+
+	//init scan params
+	openScan = true;
+	currentPage = 1;
+	currentSlot = -1;
+	return 0;
+}
+
+RC RM_FileScan::GetNextRec(RM_Record &rec){
+	RC rc = 0;
+	//test if the scan already opened
+	if (!openScan)
+		return 8;//scan not opened
+	//first get the record
+	//ignore ClientHint
+	RM_Record temprec;
+	char* pData;
+	while(true){
+		if ((rc = fh->GetNextRecord(currentPage, currentSlot, temprec)))
+			return (rc);
+		if ((rc = temprec.GetData(pData)))
+			return (rc);
+		if (comparator(pData + this->attrOffset, this->value,
+						 this->attrType, this->attrLength)){
+			rec = temprec;
+			return 0;
+		}
+
+	}
 	
+	//then 
+}
+
+RC RM_FileScan::CloseScan(){
+	openScan = false;
+	return 0;
 }

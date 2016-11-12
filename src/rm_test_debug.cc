@@ -34,7 +34,7 @@ const char * FILENAME =  "testrel";       // test file name
 #define STRLEN      29               // length of string in testrec
 #define PROG_UNIT   50               // how frequently to give progress
                                       //   reports when adding lots of recs
-#define FEW_RECS  140                // number of records added in
+#define FEW_RECS  20                // number of records added in
 
 //
 // Computes the offset of a field in a record (should be in <stddef.h>)
@@ -210,14 +210,15 @@ RC AddRecs(RM_FileHandle &fh, int numRecs)
         sprintf(recBuf.str, "a%d", i);
         recBuf.num = i;
         recBuf.r = (float)i;
+        printf("%d in loop\n",i);
         if ((rc = InsertRec(fh, (char *)&recBuf, rid)) ||
             (rc = rid.GetPageNum(pageNum)) ||
             (rc = rid.GetSlotNum(slotNum)))
             return (rc);
-        printf("PageNum = %d,SlotNum = %d\n",pageNum,slotNum);
+        printf("%d in loop\n",i);
 
         if ((i + 1) % PROG_UNIT == 0){
-            printf("%d  \n", i + 1);
+            printf("%d  ", i + 1);
             fflush(stdout);
         }
     }
@@ -229,99 +230,6 @@ RC AddRecs(RM_FileHandle &fh, int numRecs)
 
     // Return ok
     return (0);
-}
-
-//
-// AddRecs2
-//
-// Desc: Add a number of records to the file
-//
-RC AddRecs2(RM_FileHandle &fh, int numRecs)
-{
-    printf("\n\n\n\n\n\n\n\n");
-    RC      rc;
-    int     i;
-    TestRec recBuf;
-    RID     rid;
-    PageNum pageNum;
-    SlotNum slotNum;
-
-    // insert numRecs/3 Recs again
-    memset((void *)&recBuf, 0, sizeof(recBuf));
-
-    printf("\nadding %d records the second time\n", numRecs);
-    for (i = 0; i < numRecs * 2 / 3; i++) {
-        memset(recBuf.str, ' ', STRLEN);
-        sprintf(recBuf.str, "a%d", numRecs + i);
-        recBuf.num = i + numRecs;
-        recBuf.r = (float)i + numRecs;
-        if ((rc = InsertRec(fh, (char *)&recBuf, rid)) ||
-            (rc = rid.GetPageNum(pageNum)) ||
-            (rc = rid.GetSlotNum(slotNum)))
-            return (rc);
-        printf("PageNum = %d,SlotNum = %d\n",pageNum,slotNum);
-
-        if ((i + 1) % PROG_UNIT == 0){
-            printf("%d  \n", i + 1);
-            fflush(stdout);
-        }
-    }
-    printf("Add2 end\n");
-    if (i % PROG_UNIT != 0)
-        printf("%d\n", i);
-    else
-        putchar('\n');
-
-    // Return ok
-    return (0);
-}
-
-//
-// DeleteRecs
-//
-// Desc: Scan and Delete a number of recs
-//
-RC DelRecs(RM_FileHandle &fh, int numRecs)
-{
-    RC        rc;
-    int       n;
-    TestRec   *pRecBuf;
-    RID       rid;
-    char      stringBuf[STRLEN];
-    char      *found;
-    RM_Record rec;
-
-    found = new char[numRecs];
-    memset(found, 0, numRecs);
-
-    printf("\nDeleting Recs\n");
-
-    RM_FileScan fs;
-    if ((rc=fs.OpenScan(fh,INT,sizeof(int),offsetof(TestRec, num),
-                        NO_OP, NULL, NO_HINT)))
-        return (rc);
-
-    // For each record in the file
-    for (rc = GetNextRecScan(fs, rec), n = 0;
-         rc == 0;
-         rc = GetNextRecScan(fs, rec), n++) {
-
-        // Make sure the record is correct
-        if ((rc = rec.GetData((char *&)pRecBuf)) ||
-            (rc = rec.GetRid(rid)))
-            goto err;
-        if (rid.Slot() % 3 != 0)
-            if ((rc = DeleteRec(fh, rid)))
-                return (rc);
-    }\
-
-    // Return ok
-    rc = 0;
-
-err:
-    fs.CloseScan();
-    delete[] found;
-    return (rc);
 }
 
 //
@@ -338,12 +246,10 @@ RC VerifyFile(RM_FileHandle &fh, int numRecs)
     char      stringBuf[STRLEN];
     char      *found;
     RM_Record rec;
-
     found = new char[numRecs];
     memset(found, 0, numRecs);
 
     printf("\nverifying file contents\n");
-
     RM_FileScan fs;
     if ((rc=fs.OpenScan(fh,INT,sizeof(int),offsetof(TestRec, num),
                         NO_OP, NULL, NO_HINT)))
@@ -419,7 +325,7 @@ err:
 //
 // Desc: Print the contents of the file
 //
-RC PrintFile(RM_FileHandle &fh)
+RC PrintFile(RM_FileScan &fs)
 {
     RC        rc;
     int       n;
@@ -428,11 +334,6 @@ RC PrintFile(RM_FileHandle &fh)
     RM_Record rec;
 
     printf("\nprinting file contents\n");
-
-    RM_FileScan fs;
-    if ((rc=fs.OpenScan(fh,INT,sizeof(int),offsetof(TestRec, num),
-                        NO_OP, NULL, NO_HINT)))
-        return (rc);
 
     // for each record in the file
     for (rc = GetNextRecScan(fs, rec), n = 0;
@@ -600,13 +501,8 @@ RC Test2(void)
         (rc = OpenFile(FILENAME, fh)) ||
         (rc = AddRecs(fh, FEW_RECS)) ||
         (rc = VerifyFile(fh, FEW_RECS)) ||
-        (rc = DelRecs(fh, FEW_RECS)) ||
-        (rc = PrintFile(fh)) ||
-        (rc = AddRecs2(fh, FEW_RECS)) ||
-        (rc = PrintFile(fh)) ||
         (rc = CloseFile(FILENAME, fh)))
         return (rc);
-
     LsFile(FILENAME);
     // PrintFile(fh);
 

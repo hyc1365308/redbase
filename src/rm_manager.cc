@@ -5,7 +5,7 @@
 using namespace std;
 
 RM_Manager::RM_Manager(PF_Manager &pfm){
-	this->pfm = pfm;
+	this->pfm = &pfm;
 }
 
 RC RM_Manager::CreateFile(const char *fileName,int recordSize){
@@ -25,20 +25,17 @@ RC RM_Manager::CreateFile(const char *fileName,int recordSize){
 	//bitmapSize + numRecordsPerPage * recordSize + pageHeaderSize <= PAGE_SIZE
 		
 	//create file
-	if (!this->pfm.CreateFile(fileName))
-		return 4;//create fail
+	if ((rc = this->pfm->CreateFile(fileName)))
+		return rc;//create fail
 	
 	//init file
 	PF_FileHandle fh;
 	PF_PageHandle ph;
-	if (rc = pfm.OpenFile(fileName,fh))
-		return (rc);
-	if (rc = fh.AllocatePage(ph))
-		return (rc);
 	char *pData;
-	if (rc = ph.GetData(pData))
+	if ((rc = pfm->OpenFile(fileName,fh)) ||
+		(rc = fh.AllocatePage(ph)) ||
+		(rc = ph.GetData(pData)))
 		return (rc);
-
 	//Init FileHeader
 	memset(pData, 0, sizeof(struct RM_FileHeader));
 	RM_FileHeader* rm_fh = (struct RM_FileHeader*) pData;
@@ -48,20 +45,22 @@ RC RM_Manager::CreateFile(const char *fileName,int recordSize){
 	rm_fh->numPages = 2;
 	rm_fh->numRecordsPerPage = numRecordsPerPage;
 	rm_fh->recordSize = recordSize;
-	if (rc = fh.UnpinPage(0))
+	if ((rc = fh.MarkDirty(0)) ||
+		(rc = fh.UnpinPage(0)))
 		return (rc);
 	//write the pageHeader for first page 
-	if (rc = fh.AllocatePage(ph))
-		return (rc);
-	if (rc = ph.GetData(pData))
+	if ((rc = fh.AllocatePage(ph)) ||
+		(rc = ph.GetData(pData)))
 		return (rc);
 	memset(pData, 0, bitmapSize + pageHeaderSize);
 	RM_PageHeader *pageHeader = (struct RM_PageHeader*) pData;
 	pageHeader->nextFreePage = -1;
-	if (rc = fh.UnpinPage(1))
+	if ((rc = fh.MarkDirty(1)) ||
+		(rc = fh.UnpinPage(1)))
 		return (rc);
+	fh.FlushPages();
 	
-	return (rc);//success
+	return (0);//success
 }
 
 RC RM_Manager::DestroyFile(const char *fileName){
@@ -69,7 +68,7 @@ RC RM_Manager::DestroyFile(const char *fileName){
 	if (fileName == NULL)
 		return 1;//NULL FILENAME
 
-	if ((rc = pfm.DestroyFile(fileName)))
+	if ((rc = pfm->DestroyFile(fileName)))
 		return (rc);
 
 	return (rc);
@@ -79,28 +78,24 @@ RC RM_Manager::DestroyFile(const char *fileName){
 
 RC RM_Manager::OpenFile(const char* fileName,RM_FileHandle &fileHandle){
 	RC rc = 0;
-	PF_FileHandle pf_fh;
+	fileHandle.pf_fh = new PF_FileHandle();
 	PF_PageHandle ph;
-	if (rc = pfm.OpenFile(fileName, pf_fh))
+	if ((rc = pfm->OpenFile(fileName, *(fileHandle.pf_fh))))
 		return (rc);
 	//read header
 	
 	PageNum firstPage = 0;
-	if (rc = pf_fh.GetThisPage(firstPage, ph))
+	if ((rc = fileHandle.pf_fh->GetThisPage(firstPage, ph)))
 		return (rc);
 	char* pData;
-	if (rc = ph.GetData(pData))
+	if ((rc = ph.GetData(pData)))
 		return (rc);
 	RM_FileHeader *fh = (struct RM_FileHeader*) pData;
-	
+
 	//save information into fileHandle
-	fileHandle.pf_fh  = pf_fh;
-	fileHandle.header = *fh;
+	fileHandle.header = new RM_FileHeader(fh);
 	fileHandle.headerModified = false;
 	fileHandle.openedFH = true;
-	
-
-
 	return (rc);
 }
 
@@ -109,15 +104,16 @@ RC RM_Manager::CloseFile(RM_FileHandle &fileHandle){
 	if (fileHandle.headerModified){//modified
 		char* pData;
 		PF_PageHandle ph;
-		if (rc = fileHandle.pf_fh.GetThisPage(0, ph))
-			return (rc);
-		if (rc = ph.GetData(pData))
+		if ((rc = fileHandle.pf_fh->GetThisPage(0, ph)) ||
+			(rc = ph.GetData(pData)))
 			return (rc);
 		memcpy(pData, &(fileHandle.header), sizeof(struct RM_FileHeader));
-		fileHandle.pf_fh.MarkDirty(0);
-		fileHandle.pf_fh.FlushPages();
+		if ((rc = fileHandle.pf_fh->MarkDirty(0)) ||
+			(rc = fileHandle.pf_fh->UnpinPage(0)))
+			return (rc);
+		fileHandle.pf_fh->FlushPages();
 	}
-	pfm.CloseFile(fileHandle.pf_fh);
+	pfm->CloseFile(*(fileHandle.pf_fh));
 	fileHandle.openedFH = false;
 	return (rc);
 }
