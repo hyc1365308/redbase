@@ -8,11 +8,15 @@
 
 
 #include "redbase.h"
-#include "rm_rid.h"
 #include "pf.h"
 #include <string>
 #include <stdlib.h>
 #include <cstring>
+
+// Like FileHeader in RM
+struct IX_IndexHeader{
+	//add component
+}
 
 //
 // IX_Manager : provides IX file management
@@ -29,11 +33,14 @@ public:
 	RC DestroyIndex	(const char *fileName,
 					 int 		indexNo);
 
-	RC OpenIndex	(const char *fioeName,
+	RC OpenIndex	(const char *fileName,
 					 int 		indexNo,
 					 IX_IndexHandle &indexHandle);
 
 	RC CloseIndex	(IX_IndexHandle &indexHandle);
+
+private:
+	PF_Manager* pfm;
 }
 
 //
@@ -48,6 +55,9 @@ public:
 	RC DeleteEntry	(void *pData, const RID &rid);
 
 	RC ForcePages	();
+
+private:
+	PF_FileHandle *pf_fh;
 }
 
 //
@@ -65,5 +75,18 @@ public:
 	RC GetNextEntry (RID &rid);
 	RC CloseScan 	();
 }
+
+//
+// Print-error function
+//
+void IX_PrintError(RC rc);
+
+#define IX_EOF					(START_IX_WARN + 0) // end of file
+#define IX_LASTWARN				0
+
+#define IX_NULLFILENAME   		(START_IX_ERR - 0) // null filename pointer
+#define IX_INVALIDATTRLENGTH	(START_IX_ERR - 1) // invalid attrLength
+#define IX_INVALIDATTRTYPE		(START_IX_ERR - 2) // invalid attrType
+#define IX_LASTERROR			0
 
 #endif
