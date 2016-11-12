@@ -29,9 +29,10 @@ static char *RM_ErrorMsg[] = {
   (char*)"invalid AttrType",
   (char*)"cannot get the recorddata",
   (char*)"record's pointer is null",
+  (char*)"filename is null",
   (char*)"the slot already has a record",
   (char*)"the slot not have a record",
-  (char*)"the bitnum too big( >size"
+  (char*)"the bitnum too big( > size)"
 };
 
 //

@@ -139,7 +139,7 @@ RC RM_FileHandle::GetRec (const RID &rid, RM_Record &rec) const{
 RC RM_FileHandle::UpdateRec (const RM_Record &rec) {
   // only proceed if this filehandle is associated with an open file
   if (!isValidFH())
-    return 1;
+    return RM_INVALIDFILEHEADER;
   RC rc = 0;
 
   // retrieves the page and slot number of the record
@@ -261,7 +261,7 @@ RC RM_FileHandle::InsertRec (const char *pData, RID &rid) {
 RC RM_FileHandle::DeleteRec (const RID &rid) {
   // only proceed if this filehandle is associated with an open file
   if (!isValidFH())
-    return 1;
+    return RM_INVALIDFILEHEADER;
   RC rc = 0;
 
   // Retrieve page and slot number from the RID

@@ -11,14 +11,14 @@ RM_Manager::RM_Manager(PF_Manager &pfm){
 RC RM_Manager::CreateFile(const char *fileName,int recordSize){
 	RC rc = 0;
 	if (fileName == NULL)
-		return 1;//null filename
+		return RM_NULLFILENAME;//null filename
 	if (recordSize <= 0 )
-		return 2;//wrong recordSize
+		return RM_INVALIDRECORDSIZE;//wrong recordSize
 		
 	int pageHeaderSize = sizeof(struct RM_PageHeader);
 	int numRecordsPerPage = floor((PF_PAGE_SIZE - pageHeaderSize) / ( recordSize + 1.0/8));
 	if (numRecordsPerPage <= 0)
-		return 3;//recordSize too large
+		return RM_INVALIDRECORDSIZE;//recordSize too large
 		
 	int bitmapSize = numRecordsPerPage / 8;
 	if (bitmapSize * 8 < numRecordsPerPage) bitmapSize ++;//enough place for bitmap
@@ -66,7 +66,7 @@ RC RM_Manager::CreateFile(const char *fileName,int recordSize){
 RC RM_Manager::DestroyFile(const char *fileName){
 	RC rc = 0;
 	if (fileName == NULL)
-		return 1;//NULL FILENAME
+		return RM_NULLFILENAME;//NULL FILENAME
 
 	if ((rc = pfm->DestroyFile(fileName)))
 		return (rc);
@@ -96,7 +96,7 @@ RC RM_Manager::OpenFile(const char* fileName,RM_FileHandle &fileHandle){
 	fileHandle.header = new RM_FileHeader(fh);
 	fileHandle.headerModified = false;
 	fileHandle.openedFH = true;
-	return (rc);
+	return (0);
 }
 
 RC RM_Manager::CloseFile(RM_FileHandle &fileHandle){

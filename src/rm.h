@@ -192,9 +192,10 @@ void RM_PrintError(RC rc);
 #define RM_INVALIDATTRTYPE     (START_RM_ERR - 7) // invalid AttrType
 #define RM_RECORDDATAERROR     (START_RM_ERR - 8) // cannot get the recorddata
 #define RM_NULLRECPOINTER      (START_RM_ERR - 9) // record's pointer is null
-#define RM_RECORDEXISTED       (START_RM_ERR - 10) // the slot already has a record
-#define RM_RECORDNOTEXISTED    (START_RM_ERR - 11) // the slot not have a record
-#define RM_BITNUMBOUND         (START_RM_ERR - 12) // the bitnum too big( >size )
+#define RM_NULLFILENAME        (START_RM_ERR - 10) // filename is null
+#define RM_RECORDEXISTED       (START_RM_ERR - 11) // the slot already has a record
+#define RM_RECORDNOTEXISTED    (START_RM_ERR - 12) // the slot not have a record
+#define RM_BITNUMBOUND         (START_RM_ERR - 13) // the bitnum too big( >size )
 #define RM_LASTERROR           RM_BITNUMBOUND
 
 #endif

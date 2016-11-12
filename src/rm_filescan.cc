@@ -169,8 +169,6 @@ RC RM_FileScan::GetNextRec(RM_Record &rec){
 		}
 
 	}
-	
-	//then 
 }
 
 RC RM_FileScan::CloseScan(){
