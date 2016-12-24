@@ -180,7 +180,7 @@ void RM_PrintError(RC rc);
 
 #define RM_EOF                 (START_RM_WARN + 0) // end of file
 #define RM_BITMAPEOF           (START_RM_WARN + 1) // end of the bitmap
-#define RM_LASTWARN            RM_EOF
+#define RM_LASTWARN            RM_BITMAPEOF
 
 #define RM_INVALIDFILEHEADER   (START_RM_ERR - 0) // invalid fileheader
 #define RM_INVALIDRID          (START_RM_ERR - 1) // invalid RID
@@ -196,6 +196,7 @@ void RM_PrintError(RC rc);
 #define RM_RECORDEXISTED       (START_RM_ERR - 11) // the slot already has a record
 #define RM_RECORDNOTEXISTED    (START_RM_ERR - 12) // the slot not have a record
 #define RM_BITNUMBOUND         (START_RM_ERR - 13) // the bitnum too big( >size )
+#define RM_SCANNOTOPENED       (START_RM_ERR - 14) // the scan not opened
 #define RM_LASTERROR           RM_BITNUMBOUND
 
 #endif

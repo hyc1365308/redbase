@@ -38,12 +38,13 @@ PF_SOURCES     = pf_buffermgr.cc pf_error.cc pf_filehandle.cc \
                  pf_statistics.cc statistics.cc
 RM_SOURCES     = rm_filehandle.cc rm_manager.cc \
 				 rm_record.cc rm_rid.cc rm_filescan.cc rm_error.cc
-IX_SOURCES     = 
+IX_SOURCES     = ix_manager.cc ix_indexhandle.cc ix_error.cc ix_indexscan.cc
 SM_SOURCES     = 
 QL_SOURCES     = 
 UTILS_SOURCES  = 
 PARSER_SOURCES = 
-TESTER_SOURCES = pf_test1.cc pf_test2.cc pf_test3.cc temptest.cc rm_test.cc rm_test_debug.cc
+TESTER_SOURCES = ix_test.cc
+#pf_test1.cc pf_test2.cc pf_test3.cc temptest.cc rm_test.cc rm_test_debug.cc
 
 PF_OBJECTS     = $(addprefix $(BUILD_DIR), $(PF_SOURCES:.cc=.o))
 RM_OBJECTS     = $(addprefix $(BUILD_DIR), $(RM_SOURCES:.cc=.o))

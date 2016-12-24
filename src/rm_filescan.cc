@@ -151,8 +151,8 @@ RC RM_FileScan::OpenScan(const RM_FileHandle &fileHandle,  // Initialize file sc
 RC RM_FileScan::GetNextRec(RM_Record &rec){
 	RC rc = 0;
 	//test if the scan already opened
-	if (!openScan)
-		return 8;//scan not opened
+	if (!openScan) 
+		return (RM_SCANNOTOPENED);
 	//first get the record
 	//ignore ClientHint
 	RM_Record temprec;

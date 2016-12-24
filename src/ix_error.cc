@@ -20,14 +20,21 @@ static char *IX_WarnMsg[] = {
 static char *IX_ErrorMsg[] = {
   (char*)"null filename pointer",
   (char*)"invalid attrLength",
-  (char*)"invalid attrType"
+  (char*)"invalid attrType",
+  (char*)"invalid indexHandle",
+  (char*)"invalid CompOp",
+  (char*)"invalid pinHint",
+  (char*)"插入了rid重复的记录",
+  (char*)"没有找到要删除的记录",
+  (char*)"null value pointer",
+  (char*)"the scan not opened"
 };
 
 //
-// PF_PrintError
+// IX_PrintError
 //
-// Desc: Send a message corresponding to a PF return code to cerr
-//       Assumes PF_UNIX is last valid PF return code
+// Desc: Send a message corresponding to a IX return code to cerr
+//       Assumes IX_UNIX is last valid IX return code
 // In:   rc - return code for which a message is desired
 //
 void IX_PrintError(RC rc)

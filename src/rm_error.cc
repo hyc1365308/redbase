@@ -32,7 +32,8 @@ static char *RM_ErrorMsg[] = {
   (char*)"filename is null",
   (char*)"the slot already has a record",
   (char*)"the slot not have a record",
-  (char*)"the bitnum too big( > size)"
+  (char*)"the bitnum too big( > size)",
+  (char*)"the scan not opened"
 };
 
 //
