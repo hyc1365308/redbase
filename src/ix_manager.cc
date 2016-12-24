@@ -10,6 +10,10 @@ IX_Manager::IX_Manager(PF_Manager &pfm){
 	this->pfm = &pfm;
 }
 
+IX_Manager::~IX_Manager(){
+
+}
+
 
 //compile index file name with filename and indexNo
 //need to be delete
@@ -48,12 +52,10 @@ RC IX_Manager::CreateIndex	(const	char 		*fileName,
 	char *newFileName = indexFileName(fileName, indexNo);
 		
 	//create file
-	if ((rc = this->pfm->CreateFile(fileName))){
+	if ((rc = this->pfm->CreateFile(newFileName))){
 		delete newFileName;
 		return rc;
 	}
-
-	delete newFileName;
 	
 	//init file
 	PF_FileHandle fh;
@@ -62,7 +64,7 @@ RC IX_Manager::CreateIndex	(const	char 		*fileName,
 	PageNum rootPage;
 	char *headerPageData;
 	char *rootPageData;
-	if ((rc = pfm->OpenFile(fileName,fh)) ||
+	if ((rc = pfm->OpenFile(newFileName,fh)) ||
 		(rc = fh.AllocatePage(ph)) || (rc = ph.GetData(headerPageData)) || (rc = ph.GetPageNum(headerPage)) ||
 		(rc = fh.AllocatePage(ph)) || (rc = ph.GetData(rootPageData)) || (rc = ph.GetPageNum(rootPage))){
 		delete newFileName;
@@ -105,6 +107,7 @@ RC IX_Manager::CreateIndex	(const	char 		*fileName,
 		(rc = fh.MarkDirty(rootPage)) || (rc = fh.UnpinPage(rootPage))){
 		return (rc);
 	}
+
 	fh.FlushPages();
 	
 	return (0);//success
@@ -147,6 +150,9 @@ RC IX_Manager::OpenIndex	(const char *fileName,
 	if ((rc = headerPH.GetData(pData)))
 		return (rc);
 	indexHandle.header = *((IX_IndexHeader *)pData);
+
+	if ((rc = indexHandle.pfh.UnpinPage(firstPage)))
+		return (rc);
 	//init comparator
 	switch (indexHandle.header.attrType){
 		case INT  :	indexHandle.comparator = compare_int;
@@ -172,6 +178,7 @@ RC IX_Manager::CloseIndex(IX_IndexHandle &indexHandle){
 	if (indexHandle.header_modified){//modified
 		char* pData;
 		PF_PageHandle ph;
+		printf("signal11\n");
 		if ((rc = indexHandle.pfh.GetThisPage(0, ph)) ||
 			(rc = ph.GetData(pData)))
 			return (rc);
@@ -179,10 +186,13 @@ RC IX_Manager::CloseIndex(IX_IndexHandle &indexHandle){
 		if ((rc = indexHandle.pfh.MarkDirty(0)) ||
 			(rc = indexHandle.pfh.UnpinPage(0)))
 			return (rc);
-		indexHandle.pfh.FlushPages();
+		printf("signal11\n");
 	}
+	if ((rc = indexHandle.pfh.UnpinPage(indexHandle.header.rootPage))){
+		return (rc);
+	}
+	indexHandle.pfh.FlushPages();
 	indexHandle.isOpenHandle = false;
-	//adjust the filename
 	if ((rc = pfm->CloseFile(indexHandle.pfh)))
 		return (rc);
 	return (rc);

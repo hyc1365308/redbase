@@ -28,8 +28,8 @@ public:
     RC GetSlotNum(SlotNum &slotNum) const;         // Return slot number
 
     RC isValidRID() const; // checks if it is a valid RID
-    PageNum Page(){ return page; }
-    SlotNum Slot(){ return slot; }
+    PageNum Page() const{ return page; }
+    SlotNum Slot() const{ return slot; }
 
 private:
     PageNum page;

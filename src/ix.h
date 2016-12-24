@@ -65,7 +65,7 @@ private:
     bool isValidIndexHeader() const;
     static int CalcNumKeysNode(int attrLength);
     static int CalcNumKeysBucket(int attrLength);
-    RC GetFirstLeafPage(PF_PageHandle &leafPH, PageNum &leafPage);
+    RC GetFirstLeafPage(PF_PageHandle &leafPH, PageNum &leafPage) const;
     RC FindRecordPage(PF_PageHandle &leafPH, PageNum &leafPage, void * key);
     int (*comparator) (void * , void *, int);
 };
@@ -96,7 +96,7 @@ private:
     PF_PageHandle ph;
     PageNum currentPage;
     SlotNum currentSlot;
-    void* value;
+    void *value;
 };
 
 //
@@ -143,6 +143,6 @@ void IX_PrintError(RC rc);
 #define IX_NULLVALUEPOINTER     (START_IX_ERR - 8) // null value pointer
 #define IX_SCANNOTOPENED		(START_IX_ERR - 9) // the scan not opened
 
-#define IX_LASTERROR			IX_INVALIDENTRY
+#define IX_LASTERROR			IX_SCANNOTOPENED
 
 #endif

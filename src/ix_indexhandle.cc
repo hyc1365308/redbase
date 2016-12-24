@@ -61,8 +61,10 @@ RC IX_IndexHandle::InsertEntry	(void *pData, const RID &rid){
 	}
 	
 	if((rc = pfh.MarkDirty(header.rootPage)))
-    return (rc);
+    	return (rc);
 
+    //printf("PageNum = %d, SlotNum = %d, value = %d\n", rid.Page(), rid.Slot(), *(int *)pData);
+    //printf("num_keys = %d, firstSlotIndex = %d\n", rHeader->num_keys, rHeader->firstSlotIndex);
   	return (rc);
 }
 /*
@@ -873,7 +875,7 @@ int IX_IndexHandle::CalcNumKeysBucket(int attrLength){
 	return floor(1.0*body_size / (sizeof(Bucket_Entry)));
 }
 
-RC IX_IndexHandle::GetFirstLeafPage(PF_PageHandle &leafPH, PageNum &leafPage){
+RC IX_IndexHandle::GetFirstLeafPage(PF_PageHandle &leafPH, PageNum &leafPage) const{
 	RC rc = 0;
 	struct IX_NodeHeader* rootHeader;
 	if((rc = rootPH.GetData((char*&)rootHeader))){

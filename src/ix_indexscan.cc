@@ -1,5 +1,6 @@
 #include "ix.h"
 #include "ix_internal.h"
+#include "stdio.h"
 
 //
 // comparator functions
@@ -74,18 +75,19 @@ RC IX_IndexScan::OpenScan(const IX_IndexHandle &indexHandle,
 					 CompOp		compOp,
 					 void		*value,
 					 ClientHint	pinHint) {
+	RC rc;
 	//check if the input is Invalid
 	//check fileHandle
 	if (!indexHandle.isValidIndexHeader())
 		return IX_INVALIDINDEXHANDLE;
 	//check attrType & attrLength
-	switch (attrType){
+	switch (indexHandle.header.attrType){
 		case INT  :	
-		case FLOAT:	if (attrLength != 4)
+		case FLOAT:	if (indexHandle.header.attrLength != 4)
 						return IX_INVALIDATTRLENGTH;//Invalid value;
 					break;
 
-		case STRING:if ((attrLength < 1) || (attrLength > MAXSTRINGLEN))
+		case STRING:if ((indexHandle.header.attrLength < 1) || (indexHandle.header.attrLength > MAXSTRINGLEN))
 						return IX_INVALIDATTRLENGTH;//Invalid value
 					break;
 
@@ -107,8 +109,8 @@ RC IX_IndexScan::OpenScan(const IX_IndexHandle &indexHandle,
 	if (value == NULL){
 		if (compOp != NO_OP) return IX_NULLVALUEPOINTER;
 	}else{
-		this->value = (void *) malloc(attrLength);
-		memcpy(this->value, value, attrLength);
+		this->value = (void *) malloc(indexHandle.header.attrLength);
+		memcpy(this->value, value, indexHandle.header.attrLength);
 	}
 
 	//check pinHint
@@ -122,7 +124,7 @@ RC IX_IndexScan::OpenScan(const IX_IndexHandle &indexHandle,
 	//init scan paramsv
 	IX_NodeHeader_L *pData;
 	if ((rc = indexHandle.GetFirstLeafPage(ph, currentPage)) ||
-		(rc = ph.GetData((char *)pData)))
+		(rc = ph.GetData((char *&)pData)))
 		return (rc);
 
 	currentSlot = pData->firstSlotIndex;
@@ -132,13 +134,14 @@ RC IX_IndexScan::OpenScan(const IX_IndexHandle &indexHandle,
 }
 
 RC IX_IndexScan::GetNextEntry(RID &rid) {
+	RC rc;
 	if (!openScan) 
 		return (IX_SCANNOTOPENED);
 	//first get the return result;
 	char *pData;
-	if ((rc = ph.GetData((char *)pData)))
+	if ((rc = ph.GetData((char *&)pData)))
 		return (rc);
-	Node_Entry *entry = pData + sizeof(IX_IndexHeader) + currentSlot * sizeof(Node_Entry);
+	Node_Entry *entry = (Node_Entry *)(pData + sizeof(IX_NodeHeader_L) + currentSlot * sizeof(Node_Entry));
 	if (entry->slot == NO_MORE_SLOTS){
 		return IX_EOF;
 	}
@@ -148,10 +151,14 @@ RC IX_IndexScan::GetNextEntry(RID &rid) {
 	currentSlot = entry -> nextSlot;
 	if (currentSlot == NO_MORE_SLOTS){
 		IX_NodeHeader_L *nodeHeader = (IX_NodeHeader_L *)pData;
-        currentPage = nodeHeader -> nextPage;
+		PageNum temp = nodeHeader -> nextPage;
+		if (currentPage != ixh->header.rootPage)
+        	if ((rc = pfh->UnpinPage(currentPage)))
+		    	return (rc);
+        currentPage = temp;
 		if (currentPage != NO_MORE_PAGES){
 			if ((rc = pfh->GetThisPage(currentPage, ph)) ||
-				(rc = ph.GetData((char *)pData))){
+				(rc = ph.GetData((char *&)pData))){
 				return (rc);
 			}
 			nodeHeader = (IX_NodeHeader_L *)pData;
@@ -164,5 +171,12 @@ RC IX_IndexScan::GetNextEntry(RID &rid) {
 	
 RC IX_IndexScan::CloseScan() {
 	openScan = false;
+	RC rc;
+	char *pData;
+	if (currentPage == NO_MORE_PAGES || currentPage == ixh->header.rootPage) return 0;
+
+	if ((rc = pfh->UnpinPage(currentPage)) ||
+		(rc = ph.GetData((char *&)pData)))
+		return (rc);
     return 0;
 }

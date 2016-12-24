@@ -41,7 +41,7 @@ struct TestRec {
 };
 
 //
-// Global PF_Manager and RM_Manager variables
+// Global PF_Manager and IX_Manager variables
 //
 PF_Manager pfm;
 IX_Manager ixm(pfm);
@@ -57,18 +57,28 @@ RC CreateIndex(const char *fileName, int indexNo, AttrType attrType, int attrLen
 RC DestroyIndex(const char *fileName, int indexNo);
 RC OpenIndex(const char *fileName, int indexNo, IX_IndexHandle &ixh);
 RC CloseIndex(const char *fileName, int indexNo, IX_IndexHandle &ixh);
-RC InsertEntry(IX_IndexHandle &fh, char *record, RID &rid);
-RC DeleteEntry(IX_IndexHandle &fh, RID &rid);
+RC InsertEntry(IX_IndexHandle &fh, void *record, RID &rid);
+RC DeleteEntry(IX_IndexHandle &fh, void *record, RID &rid);
 //RC GetNextEntryScan(IX_IndexScan &fs, RM_Record &rec);
+
+//function to compile the index filename(in ix_manager.cc)
+char* indexFileName2(const char *fileName, int indexNo){
+    char *newFileName = new char[strlen(fileName) + 30];
+    memcpy(newFileName, fileName, strlen(fileName));
+    memcpy(newFileName + strlen(fileName), "-index-", 7);
+    sprintf(newFileName + strlen(fileName) + 7, "%d", indexNo);
+    return newFileName;
+}
+
 
 
 //
 // Array of pointers to the test functions
 //
-#define NUM_TESTS       2               // number of tests
+#define NUM_TESTS       1               // number of tests
 int (*tests[])() =                      // RC doesn't work on some compilers
 {
-    Test1
+    Test2
 };
 
 //
@@ -145,7 +155,7 @@ int main(int argc, char *argv[])
 void LsFile(const char *fileName)
 {
     char command[80];
-    sprintf(command, "ls -l %s", fileName);
+    sprintf(command, "ls -l %s", indexFileName2(fileName, 2));
     printf("doing \"%s\"\n", command);
     system(command);
 }
@@ -219,7 +229,7 @@ RC CloseIndex(const char *fileName, int indexNo, IX_IndexHandle &ixh)
 //
 // Desc: call IX_IndexHandle::InsertEntry
 //
-RC InsertEntry(IX_IndexHandle &fh, char *record, RID &rid)
+RC InsertEntry(IX_IndexHandle &fh, void *record, RID &rid)
 {
     printf("Inserting Entry...\n");
     return (fh.InsertEntry(record, rid));
@@ -230,7 +240,7 @@ RC InsertEntry(IX_IndexHandle &fh, char *record, RID &rid)
 //
 // Desc: call RM_IndexHandle::DeleteEntry
 //
-RC DeleteEntry(IX_IndexHandle &fh, char *record, RID &rid)
+RC DeleteEntry(IX_IndexHandle &fh, void *record, RID &rid)
 {
     printf("Deleting Entry...\n");
     return (fh.DeleteEntry(record, rid));
@@ -275,6 +285,47 @@ RC Test1(void)
         return (rc);
 
     printf("\ntest1 done ********************\n");
+    return (0);
+}
+
+RC Test2(void){
+    RC            rc;
+    IX_IndexHandle ixh;
+    IX_IndexScan ixs;
+
+    printf("test2 starting ****************\n");
+
+    if (
+        (rc = CreateIndex(FILENAME, 2, INT, sizeof(int)))
+        || (rc = OpenIndex(FILENAME, 2, ixh))
+      )
+        return (rc);
+
+    int data[10] = {45,90,80,70,50,61,48,29,64,98};
+    int pageN[10] = {1,2,3,4,5,6,7,8,9,10};
+    int slotN[10] = {0,1,2,3,4,5,6,7,8,9};
+    RID rid;
+    for (int i = 0; i < 10; i++){
+        rid = RID(pageN[i], slotN[i]);
+        if (rc = InsertEntry(ixh, &(data[i]), rid))
+            return (rc);
+    }
+    int x = 51;
+
+    if ((rc = ixs.OpenScan(ixh, GT_OP, &x)))
+        return (rc);
+
+    for (int i = 0; i < 10; i++) {
+        if ((rc = ixs.GetNextEntry(rid)))
+            return (rc);
+        printf("rid : PageNum = %d, SlotNum = %d.\n", rid.Page(), rid.Slot());
+        if (rid.Slot() == -1) break;
+    }
+
+    if ((rc = DestroyIndex(FILENAME, 2)))
+        return (rc);
+
+    printf("\ntest2 done ********************\n");
     return (0);
 }
 
