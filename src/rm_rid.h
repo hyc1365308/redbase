@@ -1,6 +1,9 @@
 
 #include "redbase.h"
 
+#ifndef RM_RID_H
+#define RM_RID_H
+
 //
 // PageNum: uniquely identifies a page in a file
 //
@@ -35,3 +38,5 @@ private:
     PageNum page;
     SlotNum slot;
 };
+
+#endif
