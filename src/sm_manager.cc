@@ -1,6 +1,55 @@
 
-#include <stdio.h>
+#include <cstdio>
+#include <iostream>
+#include <sstream>
+#include <fstream>
+#include <unistd.h>
+#include "redbase.h"
 #include "sm.h"
+#include "ix.h"
+#include "rm.h"
+#undef max
+#include <vector>
+#include <string>
+#include <set>
+#include "stddef.h"
+#include "statistics.h"
+#include <cfloat>
+
+using namespace std;
+extern StatisticsMgr *pStatisticsMgr;
+extern void PF_Statistics();
+
+bool recInsert_int(char *location, string value, int length){
+  int num;
+  istringstream ss(value);
+  ss >> num;
+  if(ss.fail())
+    return false;
+  //printf("num: %d \n", num);
+  memcpy(location, (char*)&num, length);
+  return true;
+}
+
+bool recInsert_float(char *location, string value, int length){
+    float num;
+    istringstream ss(value);
+    ss >> num;
+    if(ss.fail()){
+        return false;
+    }
+    memcpy(location, (char*)&num, length);
+    return true;
+}
+
+bool recInsert_string(char* location, string value, int length){
+  if(value.length() >= length){
+    memcpy(location, value.c_str(), length);
+    return true;
+  }
+  memcpy(location, value.c_str(), value.length()+1);
+  return true;
+}
 
 SM_Manager::SM_Manager    (IX_Manager &ixm, RM_Manager &rmm) {
     printf("Constructor of sm\n");

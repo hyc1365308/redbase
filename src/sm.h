@@ -16,8 +16,34 @@
 #include "ix.h"
 #include "printer.h"
 #include "rm_rid.h"
+#include <map>
+#include <string>
+#include <set>
 
 #define MAX_DB_NAME 255
+typedef struct RelCatEntry{
+  char relName[MAXNAME + 1];
+  int tupleLength;
+  int attrCount;
+  int indexCount;
+  int indexCurrNum;
+  int numTuples;
+  bool statsInitialized;
+} RelCatEntry;
+
+// Define catalog entry for an attribute
+typedef struct AttrCatEntry{
+  char relName[MAXNAME + 1];
+  char attrName[MAXNAME +1];
+  int offset;
+  AttrType attrType;
+  int attrLength;
+  int indexNo;
+  int attrNum;
+  int numDistinct;
+  float maxValue;
+  float minValue;
+} AttrCatEntry;
 
 class SM_Manager {
 public:
