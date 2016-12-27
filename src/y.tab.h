@@ -78,11 +78,14 @@ extern int yydebug;
     RW_QUERY_PLAN = 288,
     RW_ON = 289,
     RW_OFF = 290,
-    T_INT = 291,
-    T_REAL = 292,
-    T_STRING = 293,
-    T_QSTRING = 294,
-    T_SHELL_CMD = 295
+    RW_NULL = 291,
+    RW_IS = 292,
+    RW_NOT = 293,
+    T_INT = 294,
+    T_REAL = 295,
+    T_STRING = 296,
+    T_QSTRING = 297,
+    T_SHELL_CMD = 298
   };
 #endif
 /* Tokens.  */
@@ -119,11 +122,14 @@ extern int yydebug;
 #define RW_QUERY_PLAN 288
 #define RW_ON 289
 #define RW_OFF 290
-#define T_INT 291
-#define T_REAL 292
-#define T_STRING 293
-#define T_QSTRING 294
-#define T_SHELL_CMD 295
+#define RW_NULL 291
+#define RW_IS 292
+#define RW_NOT 293
+#define T_INT 294
+#define T_REAL 295
+#define T_STRING 296
+#define T_QSTRING 297
+#define T_SHELL_CMD 298
 
 /* Value type.  */
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
@@ -138,7 +144,7 @@ union YYSTYPE
     char *sval;
     NODE *n;
 
-#line 142 "y.tab.h" /* yacc.c:1909  */
+#line 148 "y.tab.h" /* yacc.c:1909  */
 };
 
 typedef union YYSTYPE YYSTYPE;

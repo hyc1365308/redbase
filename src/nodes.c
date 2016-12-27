@@ -306,12 +306,14 @@ NODE *relattr_or_value_node(NODE *relattr, NODE *value)
  * attrtype_node: allocates, initializes, and returns a pointer to a new
  * attrtype node having the indicated values.
  */
-NODE *attrtype_node(char *attrname, char *type)
+NODE *attrtype_node(char *attrname, char *type, int notNull, int count)
 {
     NODE *n = newnode(N_ATTRTYPE);
 
     n -> u.ATTRTYPE.attrname = attrname;
     n -> u.ATTRTYPE.type = type;
+    n -> u.ATTRTYPE.notNull = notNull;
+    n -> u.ATTRTYPE.count = count;
     return n;
 }
 

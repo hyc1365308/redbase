@@ -172,6 +172,8 @@ typedef struct node{
       struct{
          char *attrname;
          char *type;
+         int notNull;
+         int count;
       } ATTRTYPE;
 
       /* <value, type> pair */
@@ -217,7 +219,7 @@ NODE *relattr_node(char *relname, char *attrname);
 NODE *condition_node(NODE *lhsRelattr, CompOp op, NODE *rhsRelattrOrValue);
 NODE *value_node(AttrType type, void *value);
 NODE *relattr_or_value_node(NODE *relattr, NODE *value);
-NODE *attrtype_node(char *attrname, char *type);
+NODE *attrtype_node(char *attrname, char *type, int notNull, int count = 1);
 NODE *relation_node(char *relname);
 NODE *list_node(NODE *n);
 NODE *prepend(NODE *n, NODE *list);

@@ -279,6 +279,7 @@ static int mk_attr_infos(NODE *list, int max, AttrInfo attrInfos[])
    int len;
    AttrType type;
    NODE *attr;
+   int notNull;
    RC errval;
 
    /* for each element of the list... */
@@ -302,7 +303,8 @@ static int mk_attr_infos(NODE *list, int max, AttrInfo attrInfos[])
       /* add it to the list */
       attrInfos[i].attrName = attr -> u.ATTRTYPE.attrname;
       attrInfos[i].attrType = type;
-      attrInfos[i].attrLength = len;
+      attrInfos[i].attrLength = len * attr -> u.ATTRTYPE.count;
+      attrInfos[i].notNull = attr -> u.ATTRTYPE.notNull;
    }
 
    return i;
@@ -462,15 +464,34 @@ static void mk_value(NODE *node, Value &value)
  */
 static int parse_format_string(char *format_string, AttrType *type, int *len)
 {
-   int n;
-   char c;
+   //int n;
+   //char c;
 
    /* extract the components of the format string */
-   n = sscanf(format_string, "%c%d", &c, len);
+   //n = sscanf(format_string, "%c%d", c, len);
+
+   if (!strcmp(format_string, "int")){
+      *type = INT;
+      *len = sizeof(int);
+   }
+   else if (!strcmp(format_string, "float")){
+      *type = FLOAT;
+      *len = sizeof(float);
+   }
+   else if (!strcmp(format_string, "string")){
+      *type = STRING;
+      *len = sizeof(char);
+   }
+   else if (!strcmp(format_string, "char")){
+      *type = STRING;
+      *len = sizeof(char);
+   }
+   else {
+      return E_INVFORMATSTRING;
+   }
 
    /* if no length given... */
-   if(n == 1){
-
+   /*if(n == 1){
       switch(c){
          case 'i':
             *type = INT;
@@ -487,11 +508,45 @@ static int parse_format_string(char *format_string, AttrType *type, int *len)
          default:
             return E_INVFORMATSTRING;
       }
-   }
+   }*/
 
    /* if both are given, make sure the length is valid */
-   else if(n == 2){
+   /*else if(n == 2){
 
+      if (!strcmp(c, "int")){
+         *type = INT;
+         if(*len != sizeof(int)){
+            delete c;
+            return E_INVINTSIZE;
+         }
+      }
+      else if (!strcmp(c, "float")){
+         *type = FLOAT;
+         if(*len != sizeof(float)){
+            delete c;
+            return E_INVINTSIZE;
+         }
+      }
+      else if (!strcmp(c, "string")){
+         *type = STRING;
+         if(*len < 1 || *len > MAXSTRINGLEN){
+            delete c;
+            return E_INVSTRLEN;
+         }
+      }
+      else if (!strcmp(c, "char")){
+         *type = STRING;
+         if(*len < 1 || *len > MAXSTRINGLEN){
+            delete c;
+            return E_INVSTRLEN;
+         }
+      }
+      else {
+         delete c;
+         return E_INVFORMATSTRING;
+      }
+
+      /*
       switch(c){
          case 'i':
             *type = INT;
@@ -513,11 +568,13 @@ static int parse_format_string(char *format_string, AttrType *type, int *len)
          default:
             return E_INVFORMATSTRING;
       }
-   }
+   }*/
 
    /* otherwise it's not a valid format string */
-   else
+   /*else{
+      delete c;
       return E_INVFORMATSTRING;
+   }*/
 
    return E_OK;
 }

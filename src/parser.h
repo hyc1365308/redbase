@@ -17,6 +17,7 @@ struct AttrInfo{
     char     *attrName;   /* attribute name       */
     AttrType attrType;    /* type of attribute    */
     int      attrLength;  /* length of attribute  */
+    int      notNull;     /* if the attr must be not null */
 };
 
 struct RelAttr{

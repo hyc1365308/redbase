@@ -76,6 +76,9 @@ RC SM_Manager::CreateTable(const char *relName,   // create relation relName
                    AttrInfo   *attributes) {      //   attribute data
     RC rc = 0;
     printf("SM_CREATETABLE relName = %s, attrCount = %d\n", relName, attrCount);
+    for (int i = 0; i < attrCount; i++){
+        printf("AttrInfo: attrName = %s, attrLength = %d, notNull = %d\n", attributes[i].attrName, attributes[i].attrLength, attributes[i].notNull);
+    }
     return rc;
 }
 
