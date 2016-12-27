@@ -32,6 +32,7 @@ extern QL_Manager *pQlm;
 #define E_DUPLICATEATTR     -8
 #define E_TOOLONG           -9
 #define E_STRINGTOOLONG     -10
+#define E_INVALIDPRIMARYKEY -11
 
 /*
  * file pointer to which error messages are printed
@@ -276,6 +277,7 @@ RC interp(NODE *n)
 static int mk_attr_infos(NODE *list, int max, AttrInfo attrInfos[])
 {
    int i;
+   int count = 0;
    int len;
    AttrType type;
    NODE *attr;
@@ -295,6 +297,20 @@ static int mk_attr_infos(NODE *list, int max, AttrInfo attrInfos[])
       if(strlen(attr -> u.ATTRTYPE.attrname) > MAXNAME)
          return E_TOOLONG;
 
+      //for primary key sentences
+      if(attr -> kind == N_PRIMARY_KEY){
+         int successed = 0;
+         for (int j = 0; j < i; j++){
+            if (!strcmp(attrInfos[j].attrName, attr -> u.ATTRTYPE.attrname)){
+               attrInfos[j].isPrimaryKey = 1;
+               successed = 1;
+               break;
+            }
+         }
+         if (successed)
+            continue;
+         else return E_INVALIDPRIMARYKEY;
+      }
       /* interpret the format string */
       errval = parse_format_string(attr -> u.ATTRTYPE.type, &type, &len);
       if(errval != E_OK)
@@ -305,9 +321,11 @@ static int mk_attr_infos(NODE *list, int max, AttrInfo attrInfos[])
       attrInfos[i].attrType = type;
       attrInfos[i].attrLength = len * attr -> u.ATTRTYPE.count;
       attrInfos[i].notNull = attr -> u.ATTRTYPE.notNull;
+      attrInfos[i].isPrimaryKey = 0;
+      count ++;
    }
 
-   return i;
+   return count;
 }
 
 /*
@@ -621,6 +639,9 @@ static void print_error(char *errmsg, RC errval)
          break;
       case E_STRINGTOOLONG:
          fprintf(stderr, "string attribute too long\n");
+         break;
+      case E_INVALIDPRIMARYKEY:
+         fprintf(stderr, "invalid primary key(attribute name not found)\n");
          break;
       default:
          fprintf(ERRFP, "unrecognized errval: %d\n", errval);

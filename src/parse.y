@@ -113,6 +113,8 @@ QL_Manager *pQlm;          // QL component manager
       RW_NULL
       RW_IS
       RW_NOT
+      RW_PRIMARY
+      RW_KEY
 
 %token   <ival>   T_INT
 
@@ -408,6 +410,10 @@ attrtype
    | T_STRING T_STRING '(' T_INT ')' RW_NOT RW_NULL
     {
       $$ = attrtype_node($1, $2, 1, *((int *)& $4));
+   }
+   | RW_PRIMARY RW_KEY '(' T_STRING ')'
+    {
+      $$ = primary_key_node($4);
    }
    ;
 

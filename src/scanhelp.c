@@ -152,6 +152,12 @@ static int get_id(char *s)
    if(!strcmp(string, "not"))
       return yylval.ival = RW_NOT;
 
+   /* added symbol:primary key*/
+   if(!strcmp(string, "primary"))
+      return yylval.ival = RW_PRIMARY;
+   if(!strcmp(string, "key"))
+      return yylval.ival = RW_KEY;
+
    /*  unresolved lexemes are strings */
 
    yylval.sval = mk_string(s, len);

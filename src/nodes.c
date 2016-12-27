@@ -317,6 +317,14 @@ NODE *attrtype_node(char *attrname, char *type, int notNull, int count)
     return n;
 }
 
+NODE *primary_key_node(char *attrname)
+{
+    NODE *n = newnode(N_PRIMARY_KEY);
+
+    n -> u.ATTRTYPE.attrname = attrname;
+    return n;
+}
+
 /*
  * relation_node: allocates, initializes, and returns a pointer to a new
  * relation node having the indicated values.

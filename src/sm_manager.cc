@@ -28,7 +28,8 @@ RC SM_Manager::CreateTable(const char *relName,   // create relation relName
     RC rc = 0;
     printf("SM_CREATETABLE relName = %s, attrCount = %d\n", relName, attrCount);
     for (int i = 0; i < attrCount; i++){
-        printf("AttrInfo: attrName = %s, attrLength = %d, notNull = %d\n", attributes[i].attrName, attributes[i].attrLength, attributes[i].notNull);
+        printf("AttrInfo: attrName = %s, attrLength = %d, notNull = %d, isPrimaryKey = %d\n", 
+            attributes[i].attrName, attributes[i].attrLength, attributes[i].notNull, attributes[i].isPrimaryKey);
     }
     return rc;
 }
