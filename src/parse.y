@@ -110,6 +110,9 @@ QL_Manager *pQlm;          // QL component manager
       RW_QUERY_PLAN
       RW_ON
       RW_OFF
+      RW_NULL
+      RW_IS
+      RW_NOT
 
 %token   <ival>   T_INT
 
@@ -392,7 +395,19 @@ non_mt_attrtype_list
 attrtype
    : T_STRING T_STRING
     {
-      $$ = attrtype_node($1, $2);
+      $$ = attrtype_node($1, $2, 0);
+   }
+   | T_STRING T_STRING RW_NOT RW_NULL
+    {
+      $$ = attrtype_node($1, $2, 1);
+   }
+   | T_STRING T_STRING '(' T_INT ')'
+    {
+      $$ = attrtype_node($1, $2, 0, *((int *)& $4));
+   }
+   | T_STRING T_STRING '(' T_INT ')' RW_NOT RW_NULL
+    {
+      $$ = attrtype_node($1, $2, 1, *((int *)& $4));
    }
    ;
 

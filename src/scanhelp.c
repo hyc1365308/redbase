@@ -144,6 +144,14 @@ static int get_id(char *s)
    if(!strcmp(string, "off"))
       return yylval.ival = RW_OFF;
 
+   /* added symbol:NULL NOT and IS */
+   if(!strcmp(string, "null"))
+      return yylval.ival = RW_NULL;
+   if(!strcmp(string, "is"))
+      return yylval.ival = RW_IS;
+   if(!strcmp(string, "not"))
+      return yylval.ival = RW_NOT;
+
    /*  unresolved lexemes are strings */
 
    yylval.sval = mk_string(s, len);
