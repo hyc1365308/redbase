@@ -24,8 +24,10 @@ public:
     SM_Manager    (IX_Manager &ixm, RM_Manager &rmm);
     ~SM_Manager   ();                             // Destructor
 
+    RC CreateDb   (const char *dbName);           // Create the database
     RC OpenDb     (const char *dbName);           // Open the database
     RC CloseDb    ();                             // close the database
+    RC DropDb     (const char *dbName);           // Drop the database
 
     RC CreateTable(const char *relName,           // create relation relName
                    int        attrCount,          //   number of attributes

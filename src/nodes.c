@@ -322,6 +322,10 @@ NODE *attrtype_node(char *attrname, char *type, int notNull, int count)
     return n;
 }
 
+/*
+ * primary_key_node: allocates, initializes, and returns a pointer to a new
+ * primary_key node having the indicated values.
+ */
 NODE *primary_key_node(char *attrname)
 {
     NODE *n = newnode(N_PRIMARY_KEY);
@@ -367,4 +371,25 @@ NODE *prepend(NODE *n, NODE *list)
     newlist -> u.LIST.curr = n;
     newlist -> u.LIST.next = list;
     return newlist;
+}
+
+NODE *create_database_node(char *dbName)
+{
+    NODE *n = newnode(N_CREATEDATABASE);
+    n -> u.DATABASE.dbname = dbName;
+    return n;
+}
+
+NODE *drop_database_node(char *dbName)
+{
+    NODE *n = newnode(N_DROPDATABASE);
+    n -> u.DATABASE.dbname = dbName;
+    return n;
+}
+
+NODE *use_database_node(char *dbName)
+{
+    NODE *n = newnode(N_USEDATABASE);
+    n -> u.DATABASE.dbname = dbName;
+    return n;
 }

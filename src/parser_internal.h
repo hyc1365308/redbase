@@ -64,7 +64,10 @@ typedef enum{
     N_RELATION,
     N_STATISTICS,
     N_LIST,
-    N_PRIMARY_KEY
+    N_PRIMARY_KEY,
+    N_CREATEDATABASE,
+    N_USEDATABASE,
+    N_DROPDATABASE
 } NODEKIND;
 
 /*
@@ -76,6 +79,10 @@ typedef struct node{
    union{
       /* SM component nodes */
       /* create table node */
+      struct{
+         char *dbname;
+      } DATABASE;
+
       struct{
          char *relname;
          struct node *attrlist;
@@ -225,6 +232,10 @@ NODE *primary_key_node(char *attrname);
 NODE *relation_node(char *relname);
 NODE *list_node(NODE *n);
 NODE *prepend(NODE *n, NODE *list);
+
+NODE *create_database_node(char *dbName);
+NODE *drop_database_node(char *dbName);
+NODE *use_database_node(char *dbName);
 
 void reset_scanner(void);
 void reset_charptr(void);

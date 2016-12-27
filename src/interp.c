@@ -62,6 +62,8 @@ static void print_relations(NODE *n);
 static void print_conditions(NODE *n);
 static void print_values(NODE *n);
 
+static int openedDb;
+
 /*
  * interp: interprets parse trees
  *
@@ -257,6 +259,32 @@ RC interp(NODE *n)
                   rhsRelAttr, rhsValue, nConditions, conditions);
             break;
          }   
+
+      case N_CREATEDATABASE:
+         {
+            if(strlen(n -> u.DATABASE.dbname) > MAXNAME){
+               print_error((char*)"create", E_TOOLONG);
+               break;
+            }
+            errval = pSmm->CreateDb(n->u.DATABASE.dbname);
+            break;
+         }
+
+      case N_DROPDATABASE:
+         errval = pSmm->DropDb(n->u.DATABASE.dbname);
+         break;
+
+      case N_USEDATABASE:
+         {
+            if (openedDb){
+               errval = pSmm->CloseDb();
+            }
+            if (errval)
+               break;
+            errval = pSmm->OpenDb(n->u.DATABASE.dbname);
+            openedDb = 1;
+            break;
+         }
 
       default:   // should never get here
          break;

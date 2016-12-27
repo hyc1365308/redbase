@@ -10,15 +10,27 @@ SM_Manager::~SM_Manager   () {
     printf("Destructor of sm\n");
 }
 
+RC SM_Manager::CreateDb   (const char *dbName) {
+    RC rc = 0;
+    printf("SM_CREATEDB dbName = %s\n", dbName);
+    return rc;
+}
+
 RC SM_Manager::OpenDb     (const char *dbName) {
     RC rc = 0;
-    printf("SM_OPENDB dbName = %s", dbName);
+    printf("SM_OPENDB dbName = %s\n", dbName);
     return rc;
 }
 
 RC SM_Manager::CloseDb    () {
     RC rc = 0;
     printf("SM_CLOSEDB\n");
+    return rc;
+}
+
+RC SM_Manager::DropDb   (const char *dbName) {
+    RC rc = 0;
+    printf("SM_DROPDB dbName = %s\n", dbName);
     return rc;
 }
 
