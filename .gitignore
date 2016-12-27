@@ -1,3 +1,5 @@
 build/*
 lib/*
 src/redbase
+src/y.tab.h
+src/parse.c

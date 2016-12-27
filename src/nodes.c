@@ -259,6 +259,11 @@ NODE *condition_node(NODE *lhsRelattr, CompOp op, NODE *rhsRelattrOrValue)
 
     n->u.CONDITION.lhsRelattr = lhsRelattr;
     n->u.CONDITION.op = op;
+    if (rhsRelattrOrValue == NULL){
+        n->u.CONDITION.rhsRelattr = NULL;
+        n->u.CONDITION.rhsValue = NULL;
+        return n;
+    }
     n->u.CONDITION.rhsRelattr = 
       rhsRelattrOrValue->u.RELATTR_OR_VALUE.relattr;
     n->u.CONDITION.rhsValue = 

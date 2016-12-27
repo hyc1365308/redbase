@@ -492,6 +492,14 @@ condition
    {
       $$ = condition_node($1, $2, $3);
    }
+   | relattr RW_IS RW_NULL
+   {
+      $$ = condition_node($1, EQ_OP, NULL);
+   }
+   | relattr RW_IS RW_NOT RW_NULL
+   {
+      $$ = condition_node($1, NE_OP, NULL);
+   }
    ;
 
 relattr_or_value

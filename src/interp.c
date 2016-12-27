@@ -420,7 +420,11 @@ static int mk_conditions(NODE *list, int max, Condition conditions[])
       }
       else {
          conditions[i].bRhsIsAttr = FALSE;
-         mk_value(current->u.CONDITION.rhsValue, conditions[i].rhsValue);
+         if (current -> u.CONDITION.rhsValue == NULL){
+            conditions[i].rhsValue.data = NULL;
+         }
+         else
+            mk_value(current->u.CONDITION.rhsValue, conditions[i].rhsValue);
       }
    }
 
