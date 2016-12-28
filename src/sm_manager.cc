@@ -348,3 +348,15 @@ RC SM_Manager::Set        (const char *paramName, // set parameter to
     printf("SM_SET paramName = %s, value = %s\n", paramName, value);
     return rc;
 }
+
+RC SM_Manager::ShowTables (){
+    RC rc = 0;
+    printf("SM_SHOWTABLES\n");
+    return rc;
+}
+
+RC SM_Manager::ShowTable (const char *relName){
+    RC rc = 0;
+    printf("SM_SHOWTABLE relName = %s\n", relName);
+    return rc;
+}

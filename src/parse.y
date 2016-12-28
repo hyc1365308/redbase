@@ -120,6 +120,7 @@ QL_Manager *pQlm;          // QL component manager
       RW_TABLES
       RW_USE
       RW_SHOW
+      RW_DESC
 
 %token   <ival>   T_INT
 
@@ -172,6 +173,7 @@ QL_Manager *pQlm;          // QL component manager
       usedatabase
       showdatabases
       showtables
+      desctable
 %%
 
 start
@@ -221,6 +223,7 @@ dbl
    | usedatabase
    | showdatabases
    | showtables
+   | desctable
    {
       $$ = NULL;
    }
@@ -374,9 +377,22 @@ showtables
    : RW_SHOW RW_TABLES
    {
       printf("Show tables\n");
+      RC rc;
+      if((rc = pSmm->ShowTables()))
+         PrintError(rc);
       $$ = NULL;
    }
    ;
+
+desctable
+   : RW_DESC RW_TABLE T_STRING
+   {
+      printf("desc table\n");
+      RC rc;
+      if((rc = pSmm->ShowTable($3)))
+         PrintError(rc);
+      $$ = NULL;
+   }
 
 load
    : RW_LOAD T_STRING '(' T_QSTRING ')'

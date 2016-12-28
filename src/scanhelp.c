@@ -169,6 +169,8 @@ static int get_id(char *s)
       return yylval.ival = RW_USE;
    if(!strcmp(string, "show"))
       return yylval.ival = RW_SHOW;
+   if(!strcmp(string, "desc"))
+      return yylval.ival = RW_DESC;
 
    /*  unresolved lexemes are strings */
 
