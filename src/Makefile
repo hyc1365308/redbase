@@ -39,7 +39,7 @@ PF_SOURCES     = pf_buffermgr.cc pf_error.cc pf_filehandle.cc \
 RM_SOURCES     = rm_filehandle.cc rm_manager.cc \
 				 rm_record.cc rm_rid.cc rm_filescan.cc rm_error.cc
 IX_SOURCES     = ix_manager.cc ix_indexhandle.cc ix_error.cc ix_indexscan.cc
-SM_SOURCES     = sm_manager.cc sm_error.cc sm_attriterator.cc
+SM_SOURCES     = sm_manager.cc sm_error.cc sm_attriterator.cc printer.cc
 QL_SOURCES     = ql_manager.cc ql_error.cc
 UTILS_SOURCES  = redbase.cc CREATE.cc DROP.cc
 PARSER_SOURCES = scan.c parse.c nodes.c interp.c

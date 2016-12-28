@@ -508,3 +508,5 @@ RC SM_Manager::Set        (const char *paramName, // set parameter to
     printf("SM_SET paramName = %s, value = %s\n", paramName, value);
     return rc;
 }
+
+

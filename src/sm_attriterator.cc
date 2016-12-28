@@ -29,7 +29,7 @@ RC SM_AttrIterator::OpenIterator(RM_FileHandle &fh, char *relName){
   if((rc = fs.OpenScan(fh, STRING, MAXNAME+1, 0, EQ_OP, relName)))
     return (rc);
 
-  return (0);
+  return (rc);
 }
 
 /*
@@ -42,7 +42,7 @@ RC SM_AttrIterator::GetNextAttr(RM_Record &attrRec, AttrCatEntry *&entry){
     return (rc);
   if((rc = attrRec.GetData((char *&)entry)))
     return (rc);
-  return (0);
+  return (rc);
 }
 
 /*
@@ -53,5 +53,5 @@ RC SM_AttrIterator::CloseIterator(){
   if((rc = fs.CloseScan()))
     return (rc);
   validIterator = false;
-  return (0);
+  return (rc);
 }
