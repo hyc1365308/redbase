@@ -43,9 +43,14 @@ typedef struct AttrCatEntry{
   int numDistinct;
   float maxValue;
   float minValue;
+  int notNull;
 } AttrCatEntry;
 
 class SM_Manager {
+    friend class QL_Manager;
+    static const int NO_INDEXES = -1;
+    static const PageNum INVALID_PAGE = -1;
+    static const SlotNum INVALID_SLOT = -1;
 public:
     SM_Manager    (IX_Manager &ixm, RM_Manager &rmm);
     ~SM_Manager   ();                             // Destructor
@@ -73,6 +78,19 @@ public:
                    const char *value);            //   value
 
 private:
+  IX_Manager &ixm;
+  RM_Manager &rmm;
+  RM_FileHandle relcatFH;
+  RM_FileHandle attrcatFH;
+  bool printIndex; // Whether to print the index or not when
+                   // help is called on a specific table
+  bool useQO;
+  bool calcStats;
+  bool printPageStats;
+
+  bool isValidAttrType(AttrInfo attribute);
+  RC InsertAttrCat(const char* relName, AttrInfo attr, int offset, int attrNum);
+  RC InsertRelCat(const char *relName, int attrCount, int recSize);
 };
 
 //
@@ -82,7 +100,11 @@ void SM_PrintError(RC rc);
 
 #define SM_LASTWARN             START_SM_WARN
 
-#define SM_LASTERROR            START_SM_ERR
+#define SM_INVALIDDB            (START_SM_ERR - 0)
+#define SM_INVALIDRELNAME       (START_SM_ERR - 1)
+#define SM_INVALIDREL           (START_SM_ERR - 2)
+#define SM_INVALIDATTR          (START_SM_ERR - 3)
+#define SM_LASTERROR            SM_INVALIDATTR
 
 
 

@@ -8,7 +8,7 @@ RM_Manager::RM_Manager(PF_Manager &pfm){
 	this->pfm = &pfm;
 }
 
-RC RM_Manager::CreateFile(const char *fileName,int recordSize){
+RC RM_Manager::CreateFile(const char *fileName,float recordSize){
 	RC rc = 0;
 	if (fileName == NULL)
 		return RM_NULLFILENAME;//null filename

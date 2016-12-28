@@ -51,8 +51,11 @@ bool recInsert_string(char* location, string value, int length){
   return true;
 }
 
-SM_Manager::SM_Manager    (IX_Manager &ixm, RM_Manager &rmm) {
-    printf("Constructor of sm\n");
+SM_Manager::SM_Manager(IX_Manager &ixm, RM_Manager &rmm) : ixm(ixm), rmm(rmm){
+  printIndex = false;
+  useQO = true;
+  calcStats = false;
+  printPageStats = true;
 }
 
 SM_Manager::~SM_Manager   () {
@@ -62,12 +65,31 @@ SM_Manager::~SM_Manager   () {
 RC SM_Manager::OpenDb     (const char *dbName) {
     RC rc = 0;
     printf("SM_OPENDB dbName = %s", dbName);
+    if(strlen(dbName) > MAX_DB_NAME){
+        return (SM_INVALIDDB);
+    }
+    if(chdir(dbName) < 0){
+        cerr << "无法切换到" << dbName << endl;
+        return (SM_INVALIDDB);
+    }
+    if((rc = rmm.OpenFile("relcat", relcatFH))){
+        return (SM_INVALIDDB);
+    }
+    if((rc = rmm.OpenFile("attrcat", attrcatFH))){
+        return (SM_INVALIDDB);
+    }
     return rc;
 }
 
 RC SM_Manager::CloseDb    () {
     RC rc = 0;
     printf("SM_CLOSEDB\n");
+    if((rc = rmm.CloseFile(relcatFH))){
+        return rc;
+    }
+    if((rc = rmm.CloseFile(attrcatFH))){
+        return rc;
+    }
     return rc;
 }
 
@@ -79,9 +101,111 @@ RC SM_Manager::CreateTable(const char *relName,   // create relation relName
     for (int i = 0; i < attrCount; i++){
         printf("AttrInfo: attrName = %s, attrLength = %d, notNull = %d\n", attributes[i].attrName, attributes[i].attrLength, attributes[i].notNull);
     }
+    set<string> relAttrbutes;
+    if(attrCount > MAXATTRS || attrCount < 1){
+        return SM_INVALIDREL;
+    }
+    if(strlen(relName) > MAXNAME){ // Check for valid relName size
+        return (SM_INVALIDRELNAME);
+    }
+    float totalRecSize = 0;
+    for(int i = 0;i < attrCount; i++){
+        if(strlen(attributes[i].attrName) > MAXNAME){
+            return (SM_INVALIDATTR);
+        }
+        if(! isValidAttrType(attributes[i])){
+            return (SM_INVALIDATTR);
+        }
+        string attrString(attributes[i].attrName);
+        bool exits = (relAttrbutes.find(attrString) != relAttrbutes.end());
+        if(exits){
+            return (SM_INVALIDREL);
+        }else{
+            totalRecSize += attributes[i].attrLength;
+            relAttrbutes.insert(attrString);
+        }
+    }
+    //totalRecSize += attrCount*1.0/8.0;
+    if((rc = rmm.CreateFile(relName, totalRecSize)))
+        return (SM_INVALIDRELNAME);
+
+    RID rid;
+    int currentOffset = 0;
+    for(int i = 0;i < attrCount; i++){
+        AttrInfo attr = attributes[i];
+        if((rc = InsertAttrCat(relName, attr, currentOffset, i))){
+            return (rc);
+        }
+        currentOffset += attr.attrLength;
+    } 
+    if((rc = InsertRelCat(relName, attrCount, totalRecSize))){
+        return (rc);
+    }
+    if((rc = attrcatFH.ForcePages()) || (rc = relcatFH.ForcePages())){
+        return rc;
+    }
+    
     return rc;
 }
 
+bool SM_Manager::isValidAttrType(AttrInfo attribute){
+
+    AttrType type = attribute.attrType;
+    int length = attribute.attrLength;
+    if(type == INT && length == 4)
+      return true;
+    if(type == FLOAT && length == 4)
+      return true;
+    if(type == STRING && (length > 0) && length < MAXSTRINGLEN)
+      return true;
+  
+    return false;
+}
+
+RC SM_Manager::InsertRelCat(const char *relName, int attrCount, int recSize){
+    RC rc = 0;
+    RelCatEntry* relEntry = (RelCatEntry*)malloc(sizeof(RelCatEntry));
+    memset((void*)relEntry, 0, sizeof(RelCatEntry));
+    *relEntry  = (RelCatEntry){"\0",0,0,0,0};
+    relEntry->tupleLength = recSize;
+    relEntry -> attrCount = attrCount;
+    memcpy(relEntry -> relName, relName, MAXNAME+1);
+    relEntry -> indexCount = 0;
+    relEntry -> indexCurrNum = 0;
+    relEntry -> numTuples = 0;
+    relEntry -> statsInitialized = false;
+    RID relRID;
+    if((rc = relcatFH.InsertRec((char*)relEntry, relRID))){
+        return rc;
+    }
+    free(relEntry);
+    return rc;
+}
+
+RC SM_Manager::InsertAttrCat(const char* relName, AttrInfo attr, int offset, int attrNum){
+    RC rc = 0;
+    AttrCatEntry* attrEntry = (AttrCatEntry *)malloc(sizeof(AttrCatEntry));
+    memset((void*)attrEntry, 0,sizeof(AttrCatEntry));
+    *attrEntry = (AttrCatEntry) {"\0", "\0", 0, INT, 0, 0, 0};
+    memcpy(attrEntry->relName, relName, MAXNAME+1);
+    memcpy(attrEntry->attrName, attr.attrName, MAXNAME+1);
+    attrEntry -> offset = offset;
+    attrEntry -> attrType = attr.attrType;
+    attrEntry -> attrLength = attr.attrLength;
+    attrEntry -> indexNo = NO_INDEXES;
+    attrEntry -> attrNum = attrNum;
+    attrEntry -> numDistinct = 0;
+    attrEntry -> minValue = FLT_MIN;
+    attrEntry -> maxValue = FLT_MAX;
+    attrEntry -> notNull = attr.notNull;
+    RID attrrid;
+    if((rc = attrcatFH.InsertRec((char*)attrEntry,attrrid))){
+        return rc;
+    }
+
+    free(attrEntry);
+    return rc;
+}
 RC SM_Manager::CreateIndex(const char *relName,   // create an index for
                    const char *attrName) {        //   relName.attrName
     RC rc = 0;

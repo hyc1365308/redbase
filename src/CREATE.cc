@@ -33,9 +33,9 @@ int main(int argc, char *argv[])
     }
 
     // The database name is the second argument
-    dbname = argv[1];
-    if(strlen(argv[1]) > (sizeof(command)-strlen(command) - 1)){
-        cerr << argv[1] << " length exceeds maximum allowed, cannot create database\n";
+    dbname = argv[2];
+    if(strlen(argv[2]) > (sizeof(command)-strlen(command) - 1)){
+        cerr << argv[2] << " length exceeds maximum allowed, cannot create database\n";
         exit(1);
     }
 
