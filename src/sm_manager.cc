@@ -237,6 +237,20 @@ RC SM_Manager::CreateIndex(const char *relName,   // create an index for
     if(attrEntry -> indexNo != NO_INDEXES){
         return (SM_ALREADYINDEXED);
     }
+    if((rc = ixm.CreateIndex(relName, relEntry->indexCurrNum, attrEntry -> attrType, attrEntry -> attrLength))){
+        return (rc);
+    }
+    IX_IndexHandle ixIndexHandle;
+    RM_FIleHandle rmFileHandle;
+    RM_FileScan rmFileScan;
+    if((rc = ixm.OpenIndex(relName, relEntry -> indexCurrNum, ixIndexHandle))){
+        return (rc);
+    }
+    attrEntry -> indexNo = relEntry -> indexCurrNum;
+    if((rc = rmm.OpenFile(relName, rmFileHandle))){
+        return (rc);
+    }
+    
     return rc;
 }
 
