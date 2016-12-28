@@ -365,9 +365,54 @@ RC SM_Manager::ShowTables(){
         }
         printer.Print(cout, data);
     }
-    rmFileScan
+    rmFileScan.CloseScan();
     printer.PrintFooter(cout);
     free(dataAttrs);
+    return (rc);
+}
+
+RC SM_Manager::ShowTable  (const char *relName){
+    RC rc = 0;
+    DataAttrInfo *dataAttrs = (DataAttrInfo*)malloc(8*sizeof(DataAttrInfo));
+    if((rc = PrepareRelCatPrint(dataAttrs))){
+        return (rc);
+    }
+    RM_FileScan rmFileScan;
+    RM_Record rmRec;
+    if((rc = rmFileScan.OpenScan(relcatFH, STRING, MAXNAME+1, 0, EQ_OP, const_cast<char*>(relName)))){
+        return (rc);
+    }
+    if(rmFileScan.GetNextRec(rmRec) == RM_EOF){
+        rmFileScan.CloseScan();
+        free(dataAttrs);
+        return (SM_INVALIDRELNAME);
+    }
+    if((rc = rmFileScan.CloseScan())){
+        free(dataAttrs);
+        return (rc);
+    }
+    Printer printer(dataAttrs, 8);
+    printer.PrintHeader(cout);
+    if((rc = rmFileScan.OpenScan(attrcatFH, STRING, MAXNAME + 1, 0, EQ_OP, const_cast<char*>(relName)))){
+        return (rc);
+    }
+
+    while(rmFileScan.GetNextRec(rmRec) != RM_EOF){
+        char *data;
+        if((rc = rmRec.GetData(data))){
+            rmFileScan.CloseScan();
+            free(dataAttrs);
+            return (rc);
+        }
+        printer.Print(cout, data);
+    }
+
+    if((rc = rmFileScan.CloseScan())){
+        free(dataAttrs);
+        return (rc);
+    }
+
+    printer.PrintFooter(cout);
     return (rc);
 }
 
@@ -375,6 +420,7 @@ RC SM_Manager::PrepareRelCatPrint(DataAttrInfo *dataAttrs){
     RC rc = 0;
     for(int i = 0; i < 4; i++){
         memcpy(dataAttrs[i].relName, "relcat", MAXNAME+1);
+        dataAttrs[i].indexNo = 0;
     }
     memcpy(dataAttrs[0].attrName, "relName", MAXNAME+1);
     memcpy(dataAttrs[1].attrName, "tupleLength", MAXNAME+1);
@@ -395,6 +441,51 @@ RC SM_Manager::PrepareRelCatPrint(DataAttrInfo *dataAttrs){
     dataAttrs[1].offset  = (int)offsetof(RelCatEntry,tupleLength);
     dataAttrs[2].offset  = (int)offsetof(RelCatEntry,attrCount);
     dataAttrs[3].offset  = (int)offsetof(RelCatEntry,indexCount);
+
+    return (rc);
+}
+
+RC SM_Manager::PrepareAttrCatPrint(DataAttrInfo *dataAttrs){
+    RC rc = 0;
+    for(int i = 0; i < 8; i++){
+        memcpy(dataAttrs[i].relName, "attrcat", MAXNAME+1);
+        dataAttrs[i].indexNo = 0;
+    }
+    memcpy(dataAttrs[0].attrName, "relName", MAXNAME+1);
+    memcpy(dataAttrs[1].attrName, "attrName", MAXNAME+1);
+    memcpy(dataAttrs[2].attrName, "offset", MAXNAME +1);
+    memcpy(dataAttrs[3].attrName, "attrType", MAXNAME+1);
+    memcpy(dataAttrs[4].attrName, "attrLength", MAXNAME+1);
+    memcpy(dataAttrs[5].attrName, "indexNo", MAXNAME+1);
+    memcpy(dataAttrs[6].attrName, "notNull", MAXNAME +1);
+    memcpy(dataAttrs[7].attrName, "isPrimaryKey", MAXNAME+1);
+
+    dataAttrs[0].attrType = STRING;
+    dataAttrs[1].attrType = STRING;
+    dataAttrs[2].attrType = INT;
+    dataAttrs[3].attrType = INT;
+    dataAttrs[4].attrType = INT;
+    dataAttrs[5].attrType = INT;
+    dataAttrs[6].attrType = INT;
+    dataAttrs[7].attrType = INT;
+
+    dataAttrs[0].attrLength = MAXNAME + 1;
+    dataAttrs[1].attrLength = MAXNAME + 1;
+    dataAttrs[2].attrLength = 4;
+    dataAttrs[3].attrLength = 4;
+    dataAttrs[4].attrLength = 4;
+    dataAttrs[5].attrLength = 4;  
+    dataAttrs[6].attrLength = 4;
+    dataAttrs[7].attrLength = 4;     
+
+    dataAttrs[0].offset  = (int)offsetof(AttrCatEntry,relName);
+    dataAttrs[1].offset  = (int)offsetof(AttrCatEntry,attrName);
+    dataAttrs[2].offset  = (int)offsetof(AttrCatEntry,offset);
+    dataAttrs[3].offset  = (int)offsetof(AttrCatEntry,attrType);
+    dataAttrs[4].offset  = (int)offsetof(AttrCatEntry,attrLength);
+    dataAttrs[5].offset  = (int)offsetof(AttrCatEntry,indexNo);
+    dataAttrs[6].offset  = (int)offsetof(AttrCatEntry,notNull);
+    dataAttrs[7].offset  = (int)offsetof(AttrCatEntry,isPrimaryKey);
 
     return (rc);
 }

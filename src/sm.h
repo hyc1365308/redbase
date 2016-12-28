@@ -101,7 +101,7 @@ private:
   RC GetRelEntry(const char *relName, RM_Record &relRec, RelCatEntry *&entry);
   RC FindAttr(const char *relName, const char *attrName, RM_Record &attrRec, AttrCatEntry *&entry);
   RC PrepareRelCatPrint(DataAttrInfo *dataAttrs);
-
+  RC PrepareAttrCatPrint(DataAttrInfo *dataAttrs);
 };
 
 class SM_AttrIterator{
