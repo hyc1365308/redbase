@@ -125,7 +125,7 @@ RC SM_Manager::CreateTable(const char *relName,   // create relation relName
     if(strlen(relName) > MAXNAME){ // Check for valid relName size
         return (SM_INVALIDRELNAME);
     }
-    float totalRecSize = 0;
+    int totalRecSize = 0;
     for(int i = 0;i < attrCount; i++){
         if(strlen(attributes[i].attrName) > MAXNAME){
             return (SM_INVALIDATTR);
@@ -245,7 +245,7 @@ RC SM_Manager::CreateIndex(const char *relName,   // create an index for
         return (rc);
     }
     IX_IndexHandle ixIndexHandle;
-    RM_FIleHandle rmFileHandle;
+    RM_FileHandle rmFileHandle;
     RM_FileScan rmFileScan;
     if((rc = ixm.OpenIndex(relName, relEntry -> indexCurrNum, ixIndexHandle))){
         return (rc);
@@ -343,7 +343,62 @@ RC SM_Manager::Help       () {                    // Print relations in db
     RC rc = 0;
     printf("SM_HELP relName = null\n");
     return rc;
-}                             
+}  
+
+RC SM_Manager::ShowTables(){
+    RC rc = 0;
+    DataAttrInfo *dataAttrs = (DataAttrInfo*)malloc(4*sizeof(DataAttrInfo));
+    RM_FileScan rmFileScan;
+    RM_Record rmRec;
+    PrepareRelCatPrint(dataAttrs);
+    Printer printer(dataAttrs, 4);
+    printer.PrintHeader(cout);
+    if((rc = rmFileScan.OpenScan(relcatFH, INT, 4, 0, NO_OP, NULL))){
+        free(dataAttrs);
+        return (rc);
+    }
+    while(rmFileScan.GetNextRec(rmRec) != RM_EOF){
+        char *data;
+        if((rc = rmRec.GetData(data))){
+            free(dataAttrs);
+            return (rc);
+        }
+        printer.Print(cout, data);
+    }
+    rmFileScan
+    printer.PrintFooter(cout);
+    free(dataAttrs);
+    return (rc);
+}
+
+RC SM_Manager::PrepareRelCatPrint(DataAttrInfo *dataAttrs){
+    RC rc = 0;
+    for(int i = 0; i < 4; i++){
+        memcpy(dataAttrs[i].relName, "relcat", MAXNAME+1);
+    }
+    memcpy(dataAttrs[0].attrName, "relName", MAXNAME+1);
+    memcpy(dataAttrs[1].attrName, "tupleLength", MAXNAME+1);
+    memcpy(dataAttrs[2].attrName, "attrCount", MAXNAME +1);
+    memcpy(dataAttrs[3].attrName, "indexCount", MAXNAME+1);
+
+    dataAttrs[0].attrType = STRING;
+    dataAttrs[1].attrType = INT;
+    dataAttrs[2].attrType = INT;
+    dataAttrs[3].attrType = INT;
+
+    dataAttrs[0].attrLength = MAXNAME + 1;
+    dataAttrs[1].attrLength = 4;
+    dataAttrs[2].attrLength = 4;
+    dataAttrs[3].attrLength = 4;   
+
+    dataAttrs[0].offset  = (int)offsetof(RelCatEntry,relName);
+    dataAttrs[1].offset  = (int)offsetof(RelCatEntry,tupleLength);
+    dataAttrs[2].offset  = (int)offsetof(RelCatEntry,attrCount);
+    dataAttrs[3].offset  = (int)offsetof(RelCatEntry,indexCount);
+
+    return (rc);
+}
+
 RC SM_Manager::Help       (const char *relName) { // print schema of relName
     RC rc = 0;
     printf("SM_HELP relName = %s\n", relName);
