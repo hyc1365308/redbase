@@ -132,6 +132,9 @@ RC RM_FileHandle::GetRec (const RID &rid, RM_Record &rec) const{
 
   // always unpin the page before returning
   cleanup_and_exit:
+  RC rc2;
+  if((rc2 = pf_fh.UnpinPage(page)))
+    return (rc2);
   //bpm->release(index);
   return (rc); 
 }
@@ -180,6 +183,9 @@ RC RM_FileHandle::UpdateRec (const RM_Record &rec) {
     return (rc);
   // always unpin the page before returning
   cleanup_and_exit:
+  RC rc2;
+  if((rc2 = pf_fh.MarkDirty(page)) || (rc2 = pf_fh.UnpinPage(page)))
+    return (rc2);
   //bpm->release(index);
   return (rc); 
 }
@@ -223,9 +229,7 @@ RC RM_FileHandle::InsertRec (const char *pData, RID &rid) {
     pData, header->recordSize);
   (pageheader->numRecords)++;
   rid = RID(page, slot); // set the RID to return the location of record
-  if ((rc = pf_fh->MarkDirty(page)) ||
-      (rc = pf_fh->UnpinPage(page)))
-    return (rc);
+
   // if page is full, update the free-page-list in the file header
   if(pageheader->numRecords == header->numRecordsPerPage){
     header->firstFreePage = pageheader->nextFreePage;
@@ -236,6 +240,12 @@ RC RM_FileHandle::InsertRec (const char *pData, RID &rid) {
       if ((rc = pf_fh->AllocatePage(ph)) ||
           (rc = ph.GetData(pData_temp)))
         return (rc);
+
+      PageNum temppage;
+      if((rc = ph.GetPageNum(temppage))){
+        return (rc);
+      }
+
   		temppageheader = (struct RM_PageHeader *) pData_temp;
   		tempbitmap = pData_temp + header->bitmapOffset;
   		temppageheader->nextFreePage = header->firstFreePage;
@@ -243,16 +253,20 @@ RC RM_FileHandle::InsertRec (const char *pData, RID &rid) {
   		if((rc = ResetBitmap(tempbitmap, header->bitmapSize)))
     		return (rc);
   		//ResetBitmap(tempbitmap,header->bitmapSize);
-  		if ((rc = pf_fh->MarkDirty(header->numPages)) ||
-          (rc = pf_fh->UnpinPage(header->numPages)))
+  		if ((rc = pf_fh->MarkDirty(temppage)) ||
+          (rc = pf_fh->UnpinPage(temppage)))
         return (rc);
-  		header->firstFreePage = header->numPages;
+  		header->firstFreePage = temppage;
   		header->numPages++;
+      headerModified = true;
     }
   }
 
   // always unpin the page before returning
   cleanup_and_exit:
+  RC rc2;
+  if((rc2 = pf_fh.MarkDirty(page) ) || (rc2 = pf_fh.UnpinPage(page)))
+    return (rc2);
   //bpm->release(index);
     
   return (rc); 
@@ -294,9 +308,7 @@ RC RM_FileHandle::DeleteRec (const RID &rid) {
   if((rc = ResetBit(bitmap, header->numRecordsPerPage, slot)))
     goto cleanup_and_exit;
   pageheader->numRecords--;
-  if ((rc = pf_fh->MarkDirty(page)) ||
-      (rc = pf_fh->UnpinPage(page)))
-    return (rc);
+  
   // update the free list if this page went from full to not full
   if(pageheader->numRecords == header->numRecordsPerPage - 1){
     pageheader->nextFreePage = header->firstFreePage;
@@ -306,7 +318,9 @@ RC RM_FileHandle::DeleteRec (const RID &rid) {
 
   // always unpin the page before returning
   cleanup_and_exit:
-
+  RC rc2;
+  if((rc2 = pf_fh.MarkDirty(page)) || (rc2 = pf_fh.UnpinPage(page)))
+    return (rc2);
   return (rc); 
 }
 

@@ -132,7 +132,8 @@ void SM_PrintError(RC rc);
 #define SM_INVALIDREL           (START_SM_ERR - 2)
 #define SM_INVALIDATTR          (START_SM_ERR - 3)
 #define SM_ALREADYINDEXED       (START_SM_ERR - 4)
-#define SM_LASTERROR            SM_INVALIDATTR
+#define SM_NOINDEX              (START_SM_ERR - 5)
+#define SM_LASTERROR            SM_NOINDEX
 
 
 

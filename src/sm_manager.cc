@@ -250,11 +250,40 @@ RC SM_Manager::CreateIndex(const char *relName,   // create an index for
     if((rc = ixm.OpenIndex(relName, relEntry -> indexCurrNum, ixIndexHandle))){
         return (rc);
     }
-    attrEntry -> indexNo = relEntry -> indexCurrNum;
     if((rc = rmm.OpenFile(relName, rmFileHandle))){
         return (rc);
     }
-    
+
+    if((rc = rmFileScan.OpenScan(RM_FileHandle, INT, 4, 0, NO_OP, NULL))){
+        return (rc);
+    }
+    RM_Record rmRec;
+    while(rmFileScan.GetNextRec(rmRec) != RM_EOF){
+        char *data;
+        RID rid;
+        if((rc = rmRec.GetData(data))||(rc = rmRec.GetRid(rid))){
+            return (rc);
+        }
+        if((rc = ixIndexHandle.InsertEntry(data + attrEntry -> offset, rid))){
+            return (rc);
+        }
+    }
+    if((rc = rmFileScan.CloseScan()) || (rc = rmm.CloseFile(fh)) || (rc = ixm.CloseIndex(ixIndexHandle))){
+        return (rc);
+    }
+
+    attrEntry -> indexNo = relEntry -> indexCurrNum;
+    relEntry -> indexCurrNum++;
+    relEntry -> indexCount++;
+
+    if((rc = relcatFH.UpdateRec(relRec)) || (rc = attrcatFH.UpdateRec(attrRec))){
+        return (rc);
+    }
+
+    if((rc = relcatFH.ForcePages()) || (rc = attrcatFH.ForcePages())){
+        return (rc);
+    }
+
     return rc;
 }
 
@@ -303,9 +332,14 @@ RC SM_Manager::DropTable  (const char *relName) { // destroy a relation
         return (rc);
     }
     RID relRID;
-    if((rc = attrRec.GetRid(relRID))||(rc = relcatFH.DeleteRec(relRID))){
+    if((rc = relRec.GetRid(relRID))||(rc = relcatFH.DeleteRec(relRID))){
         return (rc);
     }
+
+    if((rc = attrcatFH.ForcePages()) || (rc = relcatFH.ForcePages())){
+        return rc;
+    }
+    
     return rc;
 }
 
@@ -331,6 +365,31 @@ RC SM_Manager::DropIndex  (const char *relName,   // destroy index on
                    const char *attrName) {        //   relName.attrName
     RC rc = 0;
     printf("SM_DROPINDEX relName = %s, attrName = %s\n", relName, attrName);
+    RM_Record relRec;
+    RelCatEntry* relcatEntry;
+    if((rc = GetRelEntry(relName, relRec, relcatEntry))){
+        return (rc);
+    }
+    RM_Record attrRec;
+    AttrCatEntry* attrcatEntry;
+    if((rc = FindAttr(relName, attrName, attrRec, attrcatEntry))){
+        return (rc);
+    }
+    if(attrcatEntry -> indexNo == NO_INDEXES){
+        return (SM_NOINDEX);
+    }
+    if((rc = ixm.DestroyIndex(relName, attrcatEntry -> indexNo))){
+        return (rc);
+    }
+    attrcatEntry -> indexNo = NO_INDEXES;
+    relEntry -> indexCount--;
+
+    if((rc = relcatFH.UpdateRec(relRec)) || (rc = attrcatFH.UpdateRec(attrRec))){
+        return (rc);
+    }
+    if((rc = relcatFH.ForcePages()) || (rc = attrcatFH.ForcePages())){
+        return (rc);
+    }
     return rc;
 }
 RC SM_Manager::Load       (const char *relName,   // load relName from
