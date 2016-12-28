@@ -44,6 +44,7 @@ typedef struct AttrCatEntry{
   float maxValue;
   float minValue;
   int notNull;
+  int isPrimaryKey;
 } AttrCatEntry;
 
 class SM_Manager {
@@ -55,8 +56,10 @@ public:
     SM_Manager    (IX_Manager &ixm, RM_Manager &rmm);
     ~SM_Manager   ();                             // Destructor
 
+    RC CreateDb   (const char *dbName);           // Create the database
     RC OpenDb     (const char *dbName);           // Open the database
     RC CloseDb    ();                             // close the database
+    RC DropDb     (const char *dbName);           // Drop the database
 
     RC CreateTable(const char *relName,           // create relation relName
                    int        attrCount,          //   number of attributes
@@ -91,7 +94,26 @@ private:
   bool isValidAttrType(AttrInfo attribute);
   RC InsertAttrCat(const char* relName, AttrInfo attr, int offset, int attrNum);
   RC InsertRelCat(const char *relName, int attrCount, int recSize);
+  RC GetRelEntry(const char *relName, RM_Record &relRec, RelCatEntry *&entry);
+  RC FindAttr(const char *relName, const char *attrName, RM_Record &attrRec, AttrCatEntry *&entry);
+
 };
+
+class SM_AttrIterator{
+  friend class SM_Manager;
+public:
+  SM_AttrIterator    ();
+  ~SM_AttrIterator   ();  
+  RC OpenIterator(RM_FileHandle &fh, char *relName);
+  RC GetNextAttr(RM_Record &attrRec, AttrCatEntry *&entry);
+  RC CloseIterator();
+
+private:
+  bool validIterator;
+  RM_FileScan fs;
+
+};
+
 
 //
 // Print-error function
@@ -104,6 +126,7 @@ void SM_PrintError(RC rc);
 #define SM_INVALIDRELNAME       (START_SM_ERR - 1)
 #define SM_INVALIDREL           (START_SM_ERR - 2)
 #define SM_INVALIDATTR          (START_SM_ERR - 3)
+#define SM_ALREADYINDEXED       (START_SM_ERR - 4)
 #define SM_LASTERROR            SM_INVALIDATTR
 
 

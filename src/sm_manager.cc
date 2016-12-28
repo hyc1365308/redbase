@@ -62,6 +62,12 @@ SM_Manager::~SM_Manager   () {
     printf("Destructor of sm\n");
 }
 
+RC SM_Manager::CreateDb   (const char *dbName) {
+    RC rc = 0;
+    printf("SM_CREATEDB dbName = %s\n", dbName);
+    return rc;
+}
+
 RC SM_Manager::OpenDb     (const char *dbName) {
     RC rc = 0;
     printf("SM_OPENDB dbName = %s", dbName);
@@ -93,13 +99,20 @@ RC SM_Manager::CloseDb    () {
     return rc;
 }
 
+RC SM_Manager::DropDb   (const char *dbName) {
+    RC rc = 0;
+    printf("SM_DROPDB dbName = %s\n", dbName);
+    return rc;
+}
+
 RC SM_Manager::CreateTable(const char *relName,   // create relation relName
                    int        attrCount,          //   number of attributes
                    AttrInfo   *attributes) {      //   attribute data
     RC rc = 0;
     printf("SM_CREATETABLE relName = %s, attrCount = %d\n", relName, attrCount);
     for (int i = 0; i < attrCount; i++){
-        printf("AttrInfo: attrName = %s, attrLength = %d, notNull = %d\n", attributes[i].attrName, attributes[i].attrLength, attributes[i].notNull);
+        printf("AttrInfo: attrName = %s, attrLength = %d, notNull = %d, isPrimaryKey = %d\n", 
+            attributes[i].attrName, attributes[i].attrLength, attributes[i].notNull, attributes[i].isPrimaryKey);
     }
     set<string> relAttrbutes;
     if(attrCount > MAXATTRS || attrCount < 1){
@@ -198,6 +211,7 @@ RC SM_Manager::InsertAttrCat(const char* relName, AttrInfo attr, int offset, int
     attrEntry -> minValue = FLT_MIN;
     attrEntry -> maxValue = FLT_MAX;
     attrEntry -> notNull = attr.notNull;
+    attrEntry -> isPrimaryKey = attr.isPrimaryKey;
     RID attrrid;
     if((rc = attrcatFH.InsertRec((char*)attrEntry,attrrid))){
         return rc;
@@ -210,11 +224,88 @@ RC SM_Manager::CreateIndex(const char *relName,   // create an index for
                    const char *attrName) {        //   relName.attrName
     RC rc = 0;
     printf("SM_CREATEINDEX relName = %s, attrName = %s\n", relName, attrName);
+    RM_Record relRec;
+    RelCatEntry *relEntry;
+    if((rc = GetRelEntry(relName, relRec, relEntry))){
+        return (rc);
+    }
+    RM_Record attrRec;
+    AttrCatEntry *attrEntry;
+    if((rc = FindAttr(relName, attrName, attrRec, attrEntry))){
+        return (rc);
+    }
+    if(attrEntry -> indexNo != NO_INDEXES){
+        return (SM_ALREADYINDEXED);
+    }
     return rc;
 }
+
+RC SM_Manager::FindAttr(const char *relName, const char *attrName, RM_Record &attrRec, AttrCatEntry *&entry){
+    RC rc = 0;
+    return (rc);
+}
+
 RC SM_Manager::DropTable  (const char *relName) { // destroy a relation
     RC rc = 0;
     printf("SM_DROPTABLE relName = %s\n", relName);
+    if(strlen(relName) > MAXNAME){
+        return (SM_INVALIDRELNAME);
+    }
+    if((rc = rmm.DestroyFile(relName))){
+        return (SM_INVALIDRELNAME);
+    }
+
+    RM_Record relRec;
+    RelCatEntry *relEntry;
+    if((rc = GetRelEntry(relName, relRec, relEntry))){
+        return (rc);
+    }
+    int numAttr = relEntry -> attrCount;
+    SM_AttrIterator attrIt;
+    if((rc = attrIt.OpenIterator(attrcatFH, const_cast<char*>(relName)))){
+        return (rc);
+    }
+    AttrCatEntry *attrEntry;
+    RM_Record attrRec;
+    for(int i = 0; i < numAttr; i++){
+        if((rc = attrIt.GetNextAttr(attrRec, attrEntry))){
+            return (rc);
+        }
+        if(attrEntry->indexNo != NO_INDEXES){
+            if((rc = DropIndex(relName, attrEntry -> attrName))){
+                return (rc);
+            }
+        }
+        RID attrRID;
+        if((rc = attrRec.GetRid(attrRID)) || (rc = attrcatFH.DeleteRec(attrRID))){
+            return (rc);
+        }
+    }
+    if((rc = attrIt.CloseIterator())){
+        return (rc);
+    }
+    RID relRID;
+    if((rc = attrRec.GetRid(relRID))||(rc = relcatFH.DeleteRec(relRID))){
+        return (rc);
+    }
+    return rc;
+}
+
+RC SM_Manager::GetRelEntry(const char *relName, RM_Record &relRec, RelCatEntry *&entry){
+    RC rc = 0;
+    RM_FileScan rmFileScan;
+    if((rc = rmFileScan.OpenScan(relcatFH, STRING, MAXNAME+1, 0, EQ_OP, const_cast<char*>(relName)))){
+        return (rc);
+    }
+    if((rc = rmFileScan.GetNextRec(relRec))){
+        return (SM_INVALIDRELNAME);
+    }
+    if((rc = rmFileScan.CloseScan())){
+        return (rc);
+    }
+    if((rc = relRec.GetData((char *&)entry))){
+        return(rc);
+    }
     return rc;
 }
 

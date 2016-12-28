@@ -113,6 +113,13 @@ QL_Manager *pQlm;          // QL component manager
       RW_NULL
       RW_IS
       RW_NOT
+      RW_PRIMARY
+      RW_KEY
+      RW_DATABASE
+      RW_DATABASES
+      RW_TABLES
+      RW_USE
+      RW_SHOW
 
 %token   <ival>   T_INT
 
@@ -159,6 +166,12 @@ QL_Manager *pQlm;          // QL component manager
       buffer
       statistics
       queryplans
+      dbl
+      createdatabase
+      dropdatabase
+      usedatabase
+      showdatabases
+      showtables
 %%
 
 start
@@ -194,8 +207,20 @@ start
 command
    : ddl
    | dml
+   | dbl
    | utility
    | nothing
+   {
+      $$ = NULL;
+   }
+   ;
+
+dbl
+   : createdatabase
+   | dropdatabase
+   | usedatabase
+   | showdatabases
+   | showtables
    {
       $$ = NULL;
    }
@@ -316,6 +341,43 @@ dropindex
    }
    ;
 
+createdatabase
+   : RW_CREATE RW_DATABASE T_STRING
+   {
+      $$ = create_database_node($3);
+   }
+   ;
+
+dropdatabase
+   : RW_DROP RW_DATABASE T_STRING
+   {
+      $$ = drop_database_node($3);
+   }
+   ;
+
+usedatabase
+   : RW_USE T_STRING
+   {
+      $$ = use_database_node($2);
+   }
+   ;
+
+showdatabases
+   : RW_SHOW RW_DATABASES
+   {
+      printf("Show databases\n");
+      $$ = NULL;
+   }
+   ;
+
+showtables
+   : RW_SHOW RW_TABLES
+   {
+      printf("Show tables\n");
+      $$ = NULL;
+   }
+   ;
+
 load
    : RW_LOAD T_STRING '(' T_QSTRING ')'
    {
@@ -409,6 +471,10 @@ attrtype
     {
       $$ = attrtype_node($1, $2, 1, *((int *)& $4));
    }
+   | RW_PRIMARY RW_KEY '(' T_STRING ')'
+    {
+      $$ = primary_key_node($4);
+   }
    ;
 
 non_mt_select_clause
@@ -485,6 +551,14 @@ condition
    : relattr op relattr_or_value
    {
       $$ = condition_node($1, $2, $3);
+   }
+   | relattr RW_IS RW_NULL
+   {
+      $$ = condition_node($1, EQ_OP, NULL);
+   }
+   | relattr RW_IS RW_NOT RW_NULL
+   {
+      $$ = condition_node($1, NE_OP, NULL);
    }
    ;
 

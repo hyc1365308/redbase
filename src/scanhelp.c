@@ -152,6 +152,24 @@ static int get_id(char *s)
    if(!strcmp(string, "not"))
       return yylval.ival = RW_NOT;
 
+   /* added symbol:primary key*/
+   if(!strcmp(string, "primary"))
+      return yylval.ival = RW_PRIMARY;
+   if(!strcmp(string, "key"))
+      return yylval.ival = RW_KEY;
+
+   /* added symbal:databse databases tables use*/
+   if(!strcmp(string, "database"))
+      return yylval.ival = RW_DATABASE;
+   if(!strcmp(string, "databases"))
+      return yylval.ival = RW_DATABASES;
+   if(!strcmp(string, "tables"))
+      return yylval.ival = RW_TABLES;
+   if(!strcmp(string, "use"))
+      return yylval.ival = RW_USE;
+   if(!strcmp(string, "show"))
+      return yylval.ival = RW_SHOW;
+
    /*  unresolved lexemes are strings */
 
    yylval.sval = mk_string(s, len);

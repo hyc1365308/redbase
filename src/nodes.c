@@ -259,6 +259,11 @@ NODE *condition_node(NODE *lhsRelattr, CompOp op, NODE *rhsRelattrOrValue)
 
     n->u.CONDITION.lhsRelattr = lhsRelattr;
     n->u.CONDITION.op = op;
+    if (rhsRelattrOrValue == NULL){
+        n->u.CONDITION.rhsRelattr = NULL;
+        n->u.CONDITION.rhsValue = NULL;
+        return n;
+    }
     n->u.CONDITION.rhsRelattr = 
       rhsRelattrOrValue->u.RELATTR_OR_VALUE.relattr;
     n->u.CONDITION.rhsValue = 
@@ -318,6 +323,18 @@ NODE *attrtype_node(char *attrname, char *type, int notNull, int count)
 }
 
 /*
+ * primary_key_node: allocates, initializes, and returns a pointer to a new
+ * primary_key node having the indicated values.
+ */
+NODE *primary_key_node(char *attrname)
+{
+    NODE *n = newnode(N_PRIMARY_KEY);
+
+    n -> u.ATTRTYPE.attrname = attrname;
+    return n;
+}
+
+/*
  * relation_node: allocates, initializes, and returns a pointer to a new
  * relation node having the indicated values.
  */
@@ -354,4 +371,25 @@ NODE *prepend(NODE *n, NODE *list)
     newlist -> u.LIST.curr = n;
     newlist -> u.LIST.next = list;
     return newlist;
+}
+
+NODE *create_database_node(char *dbName)
+{
+    NODE *n = newnode(N_CREATEDATABASE);
+    n -> u.DATABASE.dbname = dbName;
+    return n;
+}
+
+NODE *drop_database_node(char *dbName)
+{
+    NODE *n = newnode(N_DROPDATABASE);
+    n -> u.DATABASE.dbname = dbName;
+    return n;
+}
+
+NODE *use_database_node(char *dbName)
+{
+    NODE *n = newnode(N_USEDATABASE);
+    n -> u.DATABASE.dbname = dbName;
+    return n;
 }

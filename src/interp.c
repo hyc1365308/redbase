@@ -32,6 +32,7 @@ extern QL_Manager *pQlm;
 #define E_DUPLICATEATTR     -8
 #define E_TOOLONG           -9
 #define E_STRINGTOOLONG     -10
+#define E_INVALIDPRIMARYKEY -11
 
 /*
  * file pointer to which error messages are printed
@@ -60,6 +61,8 @@ static void print_relattrs(NODE *n);
 static void print_relations(NODE *n);
 static void print_conditions(NODE *n);
 static void print_values(NODE *n);
+
+static int openedDb;
 
 /*
  * interp: interprets parse trees
@@ -257,6 +260,32 @@ RC interp(NODE *n)
             break;
          }   
 
+      case N_CREATEDATABASE:
+         {
+            if(strlen(n -> u.DATABASE.dbname) > MAXNAME){
+               print_error((char*)"create", E_TOOLONG);
+               break;
+            }
+            errval = pSmm->CreateDb(n->u.DATABASE.dbname);
+            break;
+         }
+
+      case N_DROPDATABASE:
+         errval = pSmm->DropDb(n->u.DATABASE.dbname);
+         break;
+
+      case N_USEDATABASE:
+         {
+            if (openedDb){
+               errval = pSmm->CloseDb();
+            }
+            if (errval)
+               break;
+            errval = pSmm->OpenDb(n->u.DATABASE.dbname);
+            openedDb = 1;
+            break;
+         }
+
       default:   // should never get here
          break;
    }
@@ -276,6 +305,7 @@ RC interp(NODE *n)
 static int mk_attr_infos(NODE *list, int max, AttrInfo attrInfos[])
 {
    int i;
+   int count = 0;
    int len;
    AttrType type;
    NODE *attr;
@@ -295,6 +325,20 @@ static int mk_attr_infos(NODE *list, int max, AttrInfo attrInfos[])
       if(strlen(attr -> u.ATTRTYPE.attrname) > MAXNAME)
          return E_TOOLONG;
 
+      //for primary key sentences
+      if(attr -> kind == N_PRIMARY_KEY){
+         int successed = 0;
+         for (int j = 0; j < i; j++){
+            if (!strcmp(attrInfos[j].attrName, attr -> u.ATTRTYPE.attrname)){
+               attrInfos[j].isPrimaryKey = 1;
+               successed = 1;
+               break;
+            }
+         }
+         if (successed)
+            continue;
+         else return E_INVALIDPRIMARYKEY;
+      }
       /* interpret the format string */
       errval = parse_format_string(attr -> u.ATTRTYPE.type, &type, &len);
       if(errval != E_OK)
@@ -305,9 +349,11 @@ static int mk_attr_infos(NODE *list, int max, AttrInfo attrInfos[])
       attrInfos[i].attrType = type;
       attrInfos[i].attrLength = len * attr -> u.ATTRTYPE.count;
       attrInfos[i].notNull = attr -> u.ATTRTYPE.notNull;
+      attrInfos[i].isPrimaryKey = 0;
+      count ++;
    }
 
-   return i;
+   return count;
 }
 
 /*
@@ -402,7 +448,11 @@ static int mk_conditions(NODE *list, int max, Condition conditions[])
       }
       else {
          conditions[i].bRhsIsAttr = FALSE;
-         mk_value(current->u.CONDITION.rhsValue, conditions[i].rhsValue);
+         if (current -> u.CONDITION.rhsValue == NULL){
+            conditions[i].rhsValue.data = NULL;
+         }
+         else
+            mk_value(current->u.CONDITION.rhsValue, conditions[i].rhsValue);
       }
    }
 
@@ -621,6 +671,9 @@ static void print_error(char *errmsg, RC errval)
          break;
       case E_STRINGTOOLONG:
          fprintf(stderr, "string attribute too long\n");
+         break;
+      case E_INVALIDPRIMARYKEY:
+         fprintf(stderr, "invalid primary key(attribute name not found)\n");
          break;
       default:
          fprintf(ERRFP, "unrecognized errval: %d\n", errval);
