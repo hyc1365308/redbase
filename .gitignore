@@ -3,3 +3,6 @@ lib/*
 src/redbase
 src/y.tab.h
 src/parse.c
+src/DROP
+src/CREATE
+src/newdb/*

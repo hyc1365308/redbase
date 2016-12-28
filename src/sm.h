@@ -90,6 +90,7 @@ private:
   bool useQO;
   bool calcStats;
   bool printPageStats;
+  bool openedDb;
 
   bool isValidAttrType(AttrInfo attribute);
   RC InsertAttrCat(const char* relName, AttrInfo attr, int offset, int attrNum);
