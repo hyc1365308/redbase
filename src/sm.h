@@ -80,6 +80,9 @@ public:
     RC Set        (const char *paramName,         // set parameter to
                    const char *value);            //   value
 
+    RC ShowTables ();                             // show all tables in the database
+    RC ShowTable  (const char *relName);          // show the information of table relName
+
 private:
   IX_Manager &ixm;
   RM_Manager &rmm;
@@ -90,6 +93,7 @@ private:
   bool useQO;
   bool calcStats;
   bool printPageStats;
+  bool openedDb;
 
   bool isValidAttrType(AttrInfo attribute);
   RC InsertAttrCat(const char* relName, AttrInfo attr, int offset, int attrNum);

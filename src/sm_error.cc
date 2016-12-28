@@ -19,7 +19,7 @@ static char *SM_WarnMsg[] = {
 
 static char *SM_ErrorMsg[] = {
   (char*)"Invalid database",
-  (char*)"Invalid relation name"
+  (char*)"Invalid relation name",
   (char*)"Invalid relation",
   (char*)"Already indexed"
 };

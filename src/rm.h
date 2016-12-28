@@ -26,7 +26,7 @@
 // RM_FileHeader: FileHeader
 //
 struct RM_FileHeader{
-    float recordSize;           // record size in file
+    int recordSize;           // record size in file
     int numRecordsPerPage;    // calculated max # of recs per page
     int numPages;             // number of pages
     PageNum firstFreePage;    // pointer to first free object
@@ -164,7 +164,7 @@ class RM_Manager {
 public:
     RM_Manager    (PF_Manager &pfm);
 
-    RC CreateFile (const char *fileName, float recordSize);
+    RC CreateFile (const char *fileName, int recordSize);
     RC DestroyFile(const char *fileName);
     RC OpenFile   (const char *fileName, RM_FileHandle &fileHandle);
 

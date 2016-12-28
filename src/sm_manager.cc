@@ -84,12 +84,16 @@ RC SM_Manager::OpenDb     (const char *dbName) {
     if((rc = rmm.OpenFile("attrcat", attrcatFH))){
         return (SM_INVALIDDB);
     }
+    openedDb = true;
     return rc;
 }
 
 RC SM_Manager::CloseDb    () {
     RC rc = 0;
     printf("SM_CLOSEDB\n");
+    if(!openedDb)
+        return rc;
+
     if((rc = rmm.CloseFile(relcatFH))){
         return rc;
     }
