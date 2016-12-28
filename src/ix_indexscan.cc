@@ -1,67 +1,7 @@
 #include "ix.h"
 #include "ix_internal.h"
+#include "comparators2.h"
 #include "stdio.h"
-
-//
-// comparator functions
-//
-bool ix_default_comp(void * value1, void * value2, AttrType attrtype, int attrLength){
-  return true;
-}
-
-bool ix_equal(void * value1, void * value2, AttrType attrtype, int attrLength){
-  switch(attrtype){
-    case FLOAT: return (*(float *)value1 == *(float*)value2);
-    case INT: return (*(int *)value1 == *(int *)value2) ;
-    default:
-      return (strncmp((char *) value1, (char *) value2, attrLength) == 0); 
-  }
-}
-
-bool ix_less_than(void * value1, void * value2, AttrType attrtype, int attrLength){
-  switch(attrtype){
-    case FLOAT: return (*(float *)value1 < *(float*)value2);
-    case INT: return (*(int *)value1 < *(int *)value2) ;
-    default: 
-      return (strncmp((char *) value1, (char *) value2, attrLength) < 0);
-  }
-}
-
-bool ix_greater_than(void * value1, void * value2, AttrType attrtype, int attrLength){
-  switch(attrtype){
-    case FLOAT: return (*(float *)value1 > *(float*)value2);
-    case INT: return (*(int *)value1 > *(int *)value2) ;
-    default: 
-      return (strncmp((char *) value1, (char *) value2, attrLength) > 0);
-  }
-}
-
-bool ix_less_than_or_eq_to(void * value1, void * value2, AttrType attrtype, int attrLength){
-  switch(attrtype){
-    case FLOAT: return (*(float *)value1 <= *(float*)value2);
-    case INT: return (*(int *)value1 <= *(int *)value2) ;
-    default: 
-      return (strncmp((char *) value1, (char *) value2, attrLength) <= 0);
-  }
-}
-
-bool ix_greater_than_or_eq_to(void * value1, void * value2, AttrType attrtype, int attrLength){
-  switch(attrtype){
-    case FLOAT: return (*(float *)value1 >= *(float*)value2);
-    case INT: return (*(int *)value1 >= *(int *)value2) ;
-    default: 
-      return (strncmp((char *) value1, (char *) value2, attrLength) >= 0);
-  }
-}
-
-bool ix_not_equal(void * value1, void * value2, AttrType attrtype, int attrLength){
-  switch(attrtype){
-    case FLOAT: return (*(float *)value1 != *(float*)value2);
-    case INT: return (*(int *)value1 != *(int *)value2) ;
-    default: 
-      return (strncmp((char *) value1, (char *) value2, attrLength) != 0);
-  }
-}
 
 IX_IndexScan::IX_IndexScan() {
 	openScan = false;
@@ -96,13 +36,13 @@ RC IX_IndexScan::OpenScan(const IX_IndexHandle &indexHandle,
 	//-------------------------------------------
 	//check compOp
 	switch (compOp){
-		case NO_OP : this->comparator = &ix_default_comp; break;
-		case EQ_OP : this->comparator = &ix_equal; break;
-		case NE_OP : this->comparator = &ix_not_equal; break;
-		case LT_OP : this->comparator = &ix_less_than; break;
-		case GT_OP : this->comparator = &ix_greater_than; break;
-		case LE_OP : this->comparator = &ix_less_than_or_eq_to; break;
-		case GE_OP : this->comparator = &ix_greater_than_or_eq_to; break;
+		case NO_OP : this->comparator = &default_comp; break;
+		case EQ_OP : this->comparator = &equal; break;
+		case NE_OP : this->comparator = &not_equal; break;
+		case LT_OP : this->comparator = &less_than; break;
+		case GT_OP : this->comparator = &greater_than; break;
+		case LE_OP : this->comparator = &less_than_or_eq_to; break;
+		case GE_OP : this->comparator = &greater_than_or_eq_to; break;
 		default:	 return IX_INVALIDCOMPOP;//Invalid AttrType
 	}
 	//check value

@@ -433,7 +433,7 @@ RC SM_Manager::ShowTables(){
 RC SM_Manager::ShowTable  (const char *relName){
     RC rc = 0;
     DataAttrInfo *dataAttrs = (DataAttrInfo*)malloc(8*sizeof(DataAttrInfo));
-    if((rc = PrepareRelCatPrint(dataAttrs))){
+    if((rc = PrepareAttrCatPrint(dataAttrs))){
         return (rc);
     }
     RM_FileScan rmFileScan;
