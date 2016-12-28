@@ -365,7 +365,7 @@ RC SM_Manager::ShowTables(){
         }
         printer.Print(cout, data);
     }
-    rmFileScan
+    rmFileScan.CloseScan();
     printer.PrintFooter(cout);
     free(dataAttrs);
     return (rc);
@@ -415,12 +415,6 @@ RC SM_Manager::Set        (const char *paramName, // set parameter to
                    const char *value) {           //   value
     RC rc = 0;
     printf("SM_SET paramName = %s, value = %s\n", paramName, value);
-    return rc;
-}
-
-RC SM_Manager::ShowTables (){
-    RC rc = 0;
-    printf("SM_SHOWTABLES\n");
     return rc;
 }
 
