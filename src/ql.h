@@ -52,6 +52,33 @@ private:
 
 };
 
+class QL_NODE {
+public:
+    QL_NODE(const Condition condition);
+
+    RC BuildNode();
+
+    QL_NODE *nextNode;
+
+private:
+    RelAttr  lhsAttr;
+    CompOp   op;
+    int      bRhsIsAttr;
+    RelAttr  rhsAttr;
+    Value    rhsValue;
+};
+
+class QL_RecordFilter {
+public:
+    QL_RecordFilter(const Condition conditions[]);
+
+    RC BuildFilter();
+
+private:
+    int     opened;
+    QL_NODE *firstNode;
+};
+
 //
 // Print-error function
 //
