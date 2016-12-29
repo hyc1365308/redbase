@@ -14,12 +14,11 @@ using namespace std;
 // Error table
 //
 static char *QL_WarnMsg[] = {
-  (char*)"bad insert"
+  (char*)"wrong value number",
+  (char*)"wrong type with input record"
 };
 
 static char *QL_ErrorMsg[] = {
-  (char*)"wrong value number",
-  (char*)"wrong type with input record"
 };
 
 //

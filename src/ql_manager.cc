@@ -2,6 +2,8 @@
 #include <stdio.h>
 #include "ql.h"
 
+using namespace std;
+
 QL_Manager::QL_Manager (SM_Manager &smm, IX_Manager &ixm, RM_Manager &rmm) : smm(smm), ixm(ixm), rmm(rmm){
     printf("Consturctor of ql\n");
 }
@@ -28,21 +30,18 @@ RC QL_Manager::Insert  (const char *relName,    // relation to insert into
     RC rc = 0;
     printf("QL_INSERT relName = %s, nValue = %d\n", relName, nValues);
 
-    relEntries = (RelCatEntry *)malloc(sizeof(RelCatEntry));
+    //relEntries = (RelCatEntry *)malloc(sizeof(RelCatEntry));
     RM_Record unusedRec;
     if ((rc = smm.GetRelEntry(relName, unusedRec, relEntries))){
-        free(relEntries);
         return (rc);
     }
     if ((nValues != relEntries->attrCount)){
-        free(relEntries);
         return QL_WRONGVALUENUMBER;
     }
 
-    attrEntries = (AttrCatEntry *)malloc(sizeof(AttrCatEntry));
+    attrEntries = (AttrCatEntry *)malloc(sizeof(AttrCatEntry) * nValues);
     if ((rc = smm.GetAttrForRel(relEntries, attrEntries, attrToRel))){
         free(attrEntries);
-        free(relEntries);
         return (rc);
     }
 
@@ -50,29 +49,31 @@ RC QL_Manager::Insert  (const char *relName,    // relation to insert into
     for (int i = 0; i < nValues; i++){
         if (values[i].type != (attrEntries + i)->attrType){
             free(attrEntries);
-            free(relEntries);
             return QL_WRONGTYPE;
         }
     }
 
     //prepare the insert record
     tempRecord = (char *)malloc(relEntries->tupleLength);
+    cout<<"tupleLength="<<relEntries->tupleLength<<endl;
     int offset = 0;
     for (int i = 0; i < nValues; i++){
+        cout<<offset<<' '<<attrEntries[i].attrLength<<endl;
         memcpy(tempRecord + offset, values[i].data, attrEntries[i].attrLength);
         offset += attrEntries[i].attrLength;
     }
     free(attrEntries);
-    free(relEntries);
 
     RID rid;
     RM_FileHandle fh;
     if ((rc = rmm.OpenFile(relName, fh)) ||
-        (rc = fh.InsertRec(tempRecord, rid))){
+        (rc = fh.InsertRec(tempRecord, rid)) ||
+        (rc = fh.ForcePages())){
         free(tempRecord);
         return (rc);
     }
-    free(tempRecord);
+    cout<<"RID: PageNum = "<<rid.Page()<<" SlotNum = "<<rid.Slot()<<endl;
+    //free(tempRecord);
 
     return rc;
 }           

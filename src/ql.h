@@ -95,12 +95,11 @@ private:
 //
 void QL_PrintError(RC rc);
 
-#define QL_BADINSERT            (START_QL_WARN + 0) 
-#define QL_LASTWARN             QL_BADINSERT
+#define QL_WRONGVALUENUMBER     (START_QL_WARN + 0)  //wrong value number
+#define QL_WRONGTYPE            (START_QL_WARN + 1)  //wrong type with input record
+#define QL_LASTWARN             QL_WRONGTYPE
 
-#define QL_WRONGVALUENUMBER     (START_QL_ERR - 0)  //wrong value number
-#define QL_WRONGTYPE            (START_QL_ERR - 1)  //wrong type with input record
-#define QL_LASTERROR            QL_WRONGVALUENUMBER
+#define QL_LASTERROR            START_QL_ERR
 
 
 
