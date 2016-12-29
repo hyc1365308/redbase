@@ -18,7 +18,8 @@ static char *QL_WarnMsg[] = {
 };
 
 static char *QL_ErrorMsg[] = {
-  (char*)"QL Error"
+  (char*)"wrong value number",
+  (char*)"wrong type with input record"
 };
 
 //

@@ -28,6 +28,51 @@ RC QL_Manager::Insert  (const char *relName,    // relation to insert into
     RC rc = 0;
     printf("QL_INSERT relName = %s, nValue = %d\n", relName, nValues);
 
+    relEntries = (RelCatEntry *)malloc(sizeof(RelCatEntry));
+    RM_Record unusedRec;
+    if ((rc = smm.GetRelEntry(relName, unusedRec, relEntries))){
+        free(relEntries);
+        return (rc);
+    }
+    if ((nValues != relEntries->attrCount)){
+        free(relEntries);
+        return QL_WRONGVALUENUMBER;
+    }
+
+    attrEntries = (AttrCatEntry *)malloc(sizeof(AttrCatEntry));
+    if ((rc = smm.GetAttrForRel(relEntries, attrEntries, attrToRel))){
+        free(attrEntries);
+        free(relEntries);
+        return (rc);
+    }
+
+    //check value type
+    for (int i = 0; i < nValues; i++){
+        if (values[i].type != (attrEntries + i)->attrType){
+            free(attrEntries);
+            free(relEntries);
+            return QL_WRONGTYPE;
+        }
+    }
+
+    //prepare the insert record
+    tempRecord = (char *)malloc(relEntries->tupleLength);
+    int offset = 0;
+    for (int i = 0; i < nValues; i++){
+        memcpy(tempRecord + offset, values[i].data, attrEntries[i].attrLength);
+        offset += attrEntries[i].attrLength;
+    }
+    free(attrEntries);
+    free(relEntries);
+
+    RID rid;
+    RM_FileHandle fh;
+    if ((rc = rmm.OpenFile(relName, fh)) ||
+        (rc = fh.InsertRec(tempRecord, rid))){
+        free(tempRecord);
+        return (rc);
+    }
+    free(tempRecord);
 
     return rc;
 }           

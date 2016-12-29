@@ -104,7 +104,7 @@ private:
   RC PrepareAttrCatPrint(DataAttrInfo *dataAttrs);
 
   //for ql
-  RC PrepareAttrCatForRel(const char *relName, AttrCatEntry *attrCatEntry);
+  RC GetAttrForRel(RelCatEntry *relEntry, AttrCatEntry *aEntry, std::map<std::string, std::set<std::string> > &attrToRel);
 };
 
 class SM_AttrIterator{

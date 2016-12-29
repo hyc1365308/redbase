@@ -53,6 +53,14 @@ private:
     IX_Manager &ixm;
     RM_Manager &rmm;
 
+    //map from each AttrName to a set with Relname
+    std::map<std::string, std::set<std::string> > attrToRel;
+
+    RelCatEntry *relEntries;
+    AttrCatEntry *attrEntries;
+
+    char *tempRecord;
+
 };
 
 class QL_NODE {
@@ -90,8 +98,9 @@ void QL_PrintError(RC rc);
 #define QL_BADINSERT            (START_QL_WARN + 0) 
 #define QL_LASTWARN             QL_BADINSERT
 
-#define QL_INVALIDDB            (START_QL_ERR - 0)
-#define QL_LASTERROR            QL_INVALIDDB
+#define QL_WRONGVALUENUMBER     (START_QL_ERR - 0)  //wrong value number
+#define QL_WRONGTYPE            (START_QL_ERR - 1)  //wrong type with input record
+#define QL_LASTERROR            QL_WRONGVALUENUMBER
 
 
 
