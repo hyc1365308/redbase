@@ -297,7 +297,7 @@ RC SM_Manager::FindAttr(const char *relName, const char *attrName, RM_Record &at
     }
     int numAttr = relEntry -> attrCount;
     SM_AttrIterator attrIt;
-    if((rc = attrIt.OpenIterator(attrcatFH, const_cast<char*>relName))){
+    if((rc = attrIt.OpenIterator(attrcatFH, const_cast<char*>(relName)))){
         return (rc);
     }
     bool found = false;

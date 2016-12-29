@@ -2,11 +2,8 @@
 #include <stdio.h>
 #include "ql.h"
 
-QL_Manager::QL_Manager (SM_Manager &smm, IX_Manager &ixm, RM_Manager &rmm) {
+QL_Manager::QL_Manager (SM_Manager &smm, IX_Manager &ixm, RM_Manager &rmm) : smm(smm), ixm(ixm), rmm(rmm){
     printf("Consturctor of ql\n");
-    this->smm = smm;
-    this->ixm = ixm;
-    this->rmm = rmm;
 }
 
 QL_Manager::~QL_Manager() {
