@@ -15,10 +15,18 @@ using namespace std;
 //
 static char *QL_WarnMsg[] = {
   (char*)"wrong value number",
-  (char*)"wrong type with input record"
+  (char*)"wrong type in input record",
+  (char*)"attribute name not found"
 };
 
 static char *QL_ErrorMsg[] = {
+  (char*)"error in build QL_NODES",
+  (char*)"QL_NODE already inited",
+  (char*)"QL_NODE not inited",
+  (char*)"invalid compOp",
+  (char*)"invalid conditions",
+  (char*)"select wrong compare function in QL_NODE",
+  (char*)"QL_NODE error"
 };
 
 //

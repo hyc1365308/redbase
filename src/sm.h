@@ -129,12 +129,12 @@ private:
 void SM_PrintError(RC rc);
 
 
-#define SM_INVALIDDB            (START_SM_WARN - 0)
-#define SM_INVALIDRELNAME       (START_SM_WARN - 1)
-#define SM_INVALIDREL           (START_SM_WARN - 2)
-#define SM_INVALIDATTR          (START_SM_WARN - 3)
-#define SM_ALREADYINDEXED       (START_SM_WARN - 4)
-#define SM_NOINDEX              (START_SM_WARN - 5)
+#define SM_INVALIDDB            (START_SM_WARN + 0)
+#define SM_INVALIDRELNAME       (START_SM_WARN + 1)
+#define SM_INVALIDREL           (START_SM_WARN + 2)
+#define SM_INVALIDATTR          (START_SM_WARN + 3)
+#define SM_ALREADYINDEXED       (START_SM_WARN + 4)
+#define SM_NOINDEX              (START_SM_WARN + 5)
 #define SM_LASTWARN             SM_NOINDEX
 
 #define SM_LASTERROR            START_SM_ERR
