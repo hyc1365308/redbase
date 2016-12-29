@@ -289,6 +289,33 @@ RC SM_Manager::CreateIndex(const char *relName,   // create an index for
 
 RC SM_Manager::FindAttr(const char *relName, const char *attrName, RM_Record &attrRec, AttrCatEntry *&entry){
     RC rc = 0;
+    RM_Record relRec;
+    RelCatEntry* relEntry;
+    RM_FileScan rmFileScan;
+    if((rc = GetRelEntry(relName, relRec, relEntry))){
+        return (rc);
+    }
+    int numAttr = relEntry -> attrCount;
+    SM_AttrIterator attrIt;
+    if((rc = attrIt.OpenIterator(attrcatFH, const_cast<char*>relName))){
+        return (rc);
+    }
+    bool found = false;
+    for(int i = 0; i< numAttr; i++){
+        if((rc = attrIt.GetNextAttr(attrRec, entry))){
+            return (rc);
+        }
+        if(strncmp(entry -> attrName, attrName, MAXNAME + 1) == 0){
+            found = true;
+            break;
+        }
+    }
+    if((rc = attrIt.CloseIterator())){
+        return (rc);
+    }
+    if(!found){
+        return (SM_INVALIDATTR);
+    }
     return (rc);
 }
 
