@@ -133,7 +133,7 @@ RC RM_FileHandle::GetRec (const RID &rid, RM_Record &rec) const{
   // always unpin the page before returning
   cleanup_and_exit:
   RC rc2;
-  if((rc2 = pf_fh.UnpinPage(page)))
+  if((rc2 = pf_fh->UnpinPage(page)))
     return (rc2);
   //bpm->release(index);
   return (rc); 
@@ -184,7 +184,7 @@ RC RM_FileHandle::UpdateRec (const RM_Record &rec) {
   // always unpin the page before returning
   cleanup_and_exit:
   RC rc2;
-  if((rc2 = pf_fh.MarkDirty(page)) || (rc2 = pf_fh.UnpinPage(page)))
+  if((rc2 = pf_fh->MarkDirty(page)) || (rc2 = pf_fh->UnpinPage(page)))
     return (rc2);
   //bpm->release(index);
   return (rc); 
@@ -265,7 +265,7 @@ RC RM_FileHandle::InsertRec (const char *pData, RID &rid) {
   // always unpin the page before returning
   cleanup_and_exit:
   RC rc2;
-  if((rc2 = pf_fh.MarkDirty(page) ) || (rc2 = pf_fh.UnpinPage(page)))
+  if((rc2 = pf_fh->MarkDirty(page) ) || (rc2 = pf_fh->UnpinPage(page)))
     return (rc2);
   //bpm->release(index);
     
@@ -319,7 +319,7 @@ RC RM_FileHandle::DeleteRec (const RID &rid) {
   // always unpin the page before returning
   cleanup_and_exit:
   RC rc2;
-  if((rc2 = pf_fh.MarkDirty(page)) || (rc2 = pf_fh.UnpinPage(page)))
+  if((rc2 = pf_fh->MarkDirty(page)) || (rc2 = pf_fh->UnpinPage(page)))
     return (rc2);
   return (rc); 
 }

@@ -254,7 +254,7 @@ RC SM_Manager::CreateIndex(const char *relName,   // create an index for
         return (rc);
     }
 
-    if((rc = rmFileScan.OpenScan(RM_FileHandle, INT, 4, 0, NO_OP, NULL))){
+    if((rc = rmFileScan.OpenScan(rmFileHandle, INT, 4, 0, NO_OP, NULL))){
         return (rc);
     }
     RM_Record rmRec;
@@ -268,7 +268,7 @@ RC SM_Manager::CreateIndex(const char *relName,   // create an index for
             return (rc);
         }
     }
-    if((rc = rmFileScan.CloseScan()) || (rc = rmm.CloseFile(fh)) || (rc = ixm.CloseIndex(ixIndexHandle))){
+    if((rc = rmFileScan.CloseScan()) || (rc = rmm.CloseFile(rmFileHandle)) || (rc = ixm.CloseIndex(ixIndexHandle))){
         return (rc);
     }
 
@@ -382,7 +382,7 @@ RC SM_Manager::DropIndex  (const char *relName,   // destroy index on
         return (rc);
     }
     attrcatEntry -> indexNo = NO_INDEXES;
-    relEntry -> indexCount--;
+    relcatEntry -> indexCount--;
 
     if((rc = relcatFH.UpdateRec(relRec)) || (rc = attrcatFH.UpdateRec(attrRec))){
         return (rc);

@@ -9,9 +9,9 @@ QL_NODE::QL_NODE(const Condition condition) {
     this->rhsValue = condition.rhsValue;
 }
 
-RC QL_NODE::BuildNode();
-
-    QL_NODE *nextNode;
+RC QL_NODE::BuildNode() {
+	
+}
 
 private:
     RelAttr  lhsAttr;

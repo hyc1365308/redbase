@@ -4,6 +4,9 @@
 
 QL_Manager::QL_Manager (SM_Manager &smm, IX_Manager &ixm, RM_Manager &rmm) {
     printf("Consturctor of ql\n");
+    this->smm = smm;
+    this->ixm = ixm;
+    this->rmm = rmm;
 }
 
 QL_Manager::~QL_Manager() {
@@ -27,6 +30,8 @@ RC QL_Manager::Insert  (const char *relName,    // relation to insert into
         const Value values[]) {                 // values to insert
     RC rc = 0;
     printf("QL_INSERT relName = %s, nValue = %d\n", relName, nValues);
+
+
     return rc;
 }           
 

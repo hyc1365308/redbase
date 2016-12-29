@@ -347,7 +347,10 @@ static int mk_attr_infos(NODE *list, int max, AttrInfo attrInfos[])
       /* add it to the list */
       attrInfos[i].attrName = attr -> u.ATTRTYPE.attrname;
       attrInfos[i].attrType = type;
-      attrInfos[i].attrLength = len * attr -> u.ATTRTYPE.count;
+      if (type == STRING)
+         attrInfos[i].attrLength = len * attr -> u.ATTRTYPE.count;
+      else
+         attrInfos[i].attrLength = len;
       attrInfos[i].notNull = attr -> u.ATTRTYPE.notNull;
       attrInfos[i].isPrimaryKey = 0;
       count ++;

@@ -102,6 +102,9 @@ private:
   RC FindAttr(const char *relName, const char *attrName, RM_Record &attrRec, AttrCatEntry *&entry);
   RC PrepareRelCatPrint(DataAttrInfo *dataAttrs);
   RC PrepareAttrCatPrint(DataAttrInfo *dataAttrs);
+
+  //for ql
+  RC PrepareAttrCatForRel(const char *relName);
 };
 
 class SM_AttrIterator{
