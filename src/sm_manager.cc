@@ -576,6 +576,43 @@ RC SM_Manager::PrepareAttrCatPrint(DataAttrInfo *dataAttrs){
     return (rc);
 }
 
+RC SM_Manager::GetAttrForRel(RelCatEntry *relEntry, AttrCatEntry *aEntry, std::map<std::string, std::set<std::string> > &attrToRel){
+    RC rc = 0;
+    
+    int numAttr = relEntry -> attrCount;
+    
+    SM_AttrIterator attrIt;
+    if((rc = attrIt.OpenIterator(attrcatFH, relEntry -> relName))){
+        return (rc);
+    }
+    RM_Record attrRec;
+    AttrCatEntry* attrEntry;
+    for(int i = 0; i < relEntry -> attrCount; i++){
+        if((rc = attrIt.GetNextAttr(attrRec, attrEntry))){
+            return (rc);
+        }
+
+        int slot = attrEntry -> attrNum;
+        *(aEntry + slot) = (AttrCatEntry){"\0", "\0", 0, INT, 0, 0, 0, 0, 0, 0, 0, 0};
+        memcpy((char*)(aEntry + slot), (char*)attrEntry, sizeof(AttrCatEntry));
+
+        string attrString(aEntry[slot].attrName);
+        string relString(relEntry -> relName);
+        map<string, set<string> >::iterator it = attrToRel.find(attrString);
+        if(it == attrToRel.end()){
+            set<string> relNames;
+            relNames.insert(relString);
+            attrToRel.insert(make_pair(attrString, relNames));
+        }else{
+            attrToRel[attrString].insert(relString);
+        }
+    }
+    if((rc = attrIt.CloseIterator())){
+        return (rc);
+    }
+    return (rc);
+}
+
 RC SM_Manager::Help       (const char *relName) { // print schema of relName
     RC rc = 0;
     printf("SM_HELP relName = %s\n", relName);
