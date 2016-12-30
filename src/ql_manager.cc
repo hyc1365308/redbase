@@ -79,7 +79,6 @@ RC QL_Manager::SelectOne  (int nSelAttrs,          // # attrs in select clause
         attrToIndex[attrString] = i;
         attrToType[attrString] = (attrEntries + i)->attrType;
     }
-    cout<<"flag"<<endl;
 
     bool isSelectAll = false;
     if(nSelAttrs == 1){
@@ -144,7 +143,6 @@ RC QL_Manager::SelectOne  (int nSelAttrs,          // # attrs in select clause
             }
         }
     }
-    cout<<"flag"<<endl;
 
     //build nodes
     QL_NODE* firstNode;
@@ -171,7 +169,6 @@ RC QL_Manager::SelectOne  (int nSelAttrs,          // # attrs in select clause
         firstNode->nextNode = NULL;
         firstNode->print();
     }
-    cout<<"flag"<<endl;
     QL_NODE* tempNode = firstNode;
     for (int i = 1; i < nConditions; i++) {
         tempNode->nextNode = new QL_NODE(conditions[i], *(AttrType *)(types + i));
