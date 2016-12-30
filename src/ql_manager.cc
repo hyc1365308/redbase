@@ -82,7 +82,7 @@ RC QL_Manager::SelectOne  (int nSelAttrs,          // # attrs in select clause
 
     bool isSelectAll = false;
     if(nSelAttrs == 1){
-        if(strncmp("*", selAttrs[0].attrName, 2) == 0){
+        if(strncmp("*\0", selAttrs[0].attrName, 2) == 0){
             isSelectAll = true;
         }
     }

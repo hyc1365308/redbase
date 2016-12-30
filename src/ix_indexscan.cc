@@ -162,9 +162,14 @@ RC IX_IndexScan::GetNextEntry(RID &rid){
 			rid = currRID;
 			notFound = false;
 			foundFirstValue = true;
-		}else if(foundFirstValue == true){
-			foundLastValue = true;
-			return (IX_EOF);
+		}else{ 
+			if(foundFirstValue == true){
+				foundLastValue = true;
+				return (IX_EOF);
+			}
+			if(compOp == EQ_OP){
+				return (IX_EOF);
+			}
 		}
 	}
 	SlotNum thisRIDPage;
@@ -297,6 +302,7 @@ RC IX_IndexScan::GetAppropriateEntryInLeaf(PF_PageHandle &leafPH){
 		return (rc);
 	}
 	//加入特判
+	/*
 	if(index == NO_MORE_SLOTS){
 		return (IX_INVALIDSCAN);
 	}else if(compOp == GE_OP || compOp == GT_OP){
@@ -336,7 +342,7 @@ RC IX_IndexScan::GetAppropriateEntryInLeaf(PF_PageHandle &leafPH){
 				}
 			}
 		}
-	}
+	}*/
 	//
 	leafSlot = index;
 
