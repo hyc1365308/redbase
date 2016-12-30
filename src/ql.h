@@ -32,6 +32,20 @@ public:
         int   nConditions,               // # conditions in where clause
         const Condition conditions[]);   // conditions in where clause
 
+    RC SelectOne  (int nSelAttrs,           // # attrs in select clause
+    const RelAttr selAttrs[],        // attrs in select clause
+    int   nRelations,                // # relations in from clause
+    const char * const relations[],  // relations in from clause
+    int   nConditions,               // # conditions in where clause
+    const Condition conditions[]);   // conditions in where clause
+
+    RC SelectTwo  (int nSelAttrs,           // # attrs in select clause
+    const RelAttr selAttrs[],        // attrs in select clause
+    int   nRelations,                // # relations in from clause
+    const char * const relations[],  // relations in from clause
+    int   nConditions,               // # conditions in where clause
+    const Condition conditions[]);   // conditions in where clause
+
     RC Insert  (const char *relName,     // relation to insert into
         int   nValues,                   // # values
         const Value values[]);           // values to insert
@@ -56,11 +70,15 @@ private:
     //map from each AttrName to a set with Relname
     std::map<std::string, std::set<std::string> > attrToRel;
     std::map<std::string, int> attrToIndex;
+    std::map<std::string, int> attrToIndexSecond;
     std::map<std::string, AttrType> attrToType;
+    std::map<std::string, AttrType> attrToTypeSecond;
 
     AttrType *types;
     RelCatEntry *relEntries;
+    RelCatEntry *relEntriesSecond;
     AttrCatEntry *attrEntries;
+    AttrCatEntry *attrEntriesSecond;
 
     char *tempRecord;
 
@@ -126,6 +144,7 @@ void QL_PrintError(RC rc);
 #define QL_WRONGTYPE            (START_QL_WARN + 1)  //wrong type in input record
 #define QL_ATTRNAMENOTFOUND     (START_QL_WARN + 2)  //attribute name not found
 #define QL_NOTNULL              (START_QL_WARN + 3)
+#define QL_INVALIDSELECT        (START_QL_WARN + 4)
 #define QL_LASTWARN             QL_NOTNULL
 
 #define QL_NODEBUILDERROR       (START_QL_ERR - 0)   //error in build QL_NODES

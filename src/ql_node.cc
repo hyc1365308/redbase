@@ -72,10 +72,12 @@ RC QL_NODE::setParams(int attrOffset1, int attrLength1, int attrIndex1, int recL
 
 bool QL_NODE::compare(const char *record){
     if (compareToNull == 1){ // == NULL
-        return true;
+        string nullString = "0";
+        return comparator((void *)(record + attrOffset1), nullString.c_str(), attrType, attrLength1);
     }
-    else if (compareToNull == 2){// != NULL
-        return true;
+    else if (compareToNull == 2){// != NULL       
+        string nullString = "0";
+        return comparator((void *)(record + attrOffset1), nullString.c_str(), attrType, attrLength1);
     }
     else if (compareToNull == 0){
         if (compareType == 0)

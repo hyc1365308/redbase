@@ -17,7 +17,8 @@ static char *QL_WarnMsg[] = {
   (char*)"wrong value number",
   (char*)"wrong type in input record",
   (char*)"attribute name not found",
-  (char*)"insert null into notNull"
+  (char*)"insert null into notNull",
+  (char*)"Invalid Select"
 };
 
 static char *QL_ErrorMsg[] = {
