@@ -70,7 +70,20 @@ RC QL_NODE::setParams(int attrOffset1, int attrLength1, int attrIndex1, int recL
     return rc;
 }
 
-bool QL_NODE::compare(const char *record){
+bool QL_NODE::compare(const char *record1,const char* record2){
+
+    if (compareType == 0)
+        return QL_NODENOTINITED;
+    else if (compareType == 1){//one param
+        return compareOne(record1);
+    }
+    else if (compareType == 2){//two param
+        return compareTwo(record1, record2);
+    }
+    else return QL_NODEERROR;
+}
+
+bool QL_NODE::compareOne(const char *record){
     if (compareToNull == 1){ // == NULL
         char *nullString = "_null";
         return comparator((void *)(record + attrOffset1), nullString, attrType, attrLength1);
@@ -94,7 +107,7 @@ bool QL_NODE::compare(const char *record){
     else return QL_NODEERROR;
 }
 
-bool QL_NODE::compare(const char *record1,const char *record2){
+bool QL_NODE::compareTwo(const char *record1,const char *record2){
     if (compareToNull == 1){ // == NULL
         return true;
     }

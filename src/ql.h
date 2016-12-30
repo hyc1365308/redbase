@@ -92,14 +92,18 @@ public:
     RC setParams(int attrOffset1, int attrLength1, int attrIndex1, int recLength1,
                  int attrOffset2, int attrLength2);
 
-    bool compare(const char *record);
-    bool compare(const char *record1,const char* record2);
-
     void print();
+
+    bool compare(const char *record1,const char* record2);
 
     QL_NODE *nextNode;
 
 private:
+
+    bool compareOne(const char *record);
+    bool compareTwo(const char *record1,const char* record2);
+
+
     RelAttr  lhsAttr;
     CompOp   op;
     int      bRhsIsAttr;
@@ -154,6 +158,7 @@ void QL_PrintError(RC rc);
 #define QL_INVALIDCONDITIONS    (START_QL_ERR - 4)   //invalid conditions
 #define QL_NODEFUNCSELECTERROR  (START_QL_ERR - 5)   //select wrong compare function in QL_NODE
 #define QL_NODEERROR            (START_QL_ERR - 6)   //QL_NODE error
-#define QL_LASTERROR            QL_NODEERROR
+#define QL_RECORDNULL           (START_QL_ERR - 7)   //Record Null
+#define QL_LASTERROR            QL_RECORDNULL
 
 #endif

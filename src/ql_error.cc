@@ -28,7 +28,8 @@ static char *QL_ErrorMsg[] = {
   (char*)"invalid compOp",
   (char*)"invalid conditions",
   (char*)"select wrong compare function in QL_NODE",
-  (char*)"QL_NODE error"
+  (char*)"QL_NODE error",
+  (char*)"Record Null"
 };
 
 //
