@@ -67,36 +67,75 @@ private:
     static int CalcNumKeysBucket(int attrLength);
     RC GetFirstLeafPage(PF_PageHandle &leafPH, PageNum &leafPage) const;
     RC FindRecordPage(PF_PageHandle &leafPH, PageNum &leafPage, void * key);
+    //RC FindNodeInsertIndex(struct IX_NodeHeader *nHeader, 
+      //  void* pData, int& index, bool& isDup);
     int (*comparator) (void * , void *, int);
+
 };
 
 //
 // IX_IndexScan : condition-based scan of indexs in the file
 //
 class IX_IndexScan{
+	static const char UNOCCUPIED = 'u';
+	static const char OCCUPIED_NEW = 'n';
+	static const char OCCUPIED_DUP = 'r';
 public:
 	IX_IndexScan	();
 	~IX_IndexScan 	();
-	RC OpenScan		(const IX_IndexHandle &indexHandle,
-					 CompOp		compOp,
-					 void		*value,
-					 ClientHint	pinHint = NO_HINT);
-
+	RC OpenScan (const IX_IndexHandle &indexHandle, CompOp compOp, void *value, ClientHint pinHint = NO_HINT);
 	RC GetNextEntry (RID &rid);
 	RC CloseScan 	();
 
 private:
-    bool openScan;
-    bool (*comparator) (void * value1, void * value2, AttrType attrType, int attrLength);
-    const IX_IndexHandle* ixh;
+    RC BeginScan(PF_PageHandle &leafPH, PageNum &pageNum);
+    RC GetFirstEntryInLeaf(PF_PageHandle &leafPH);
+    RC GetFirstBucketEntry(PageNum nextBucket, PF_PageHandle &bucketPH);
+    RC GetAppropriateEntryInLeaf(PF_PageHandle &leafPH);
+    RC FindNextValue();
+    RC SetRID(bool setCurrent);
+    bool (*comparator) (void *, void *, AttrType, int);
+    IX_IndexHandle* indexHandle;
     const PF_FileHandle* pfh;
 
     ClientHint pinHint;
 
     PF_PageHandle ph;
+    PF_PageHandle currLeafPH;
+    PF_PageHandle currBucketPH;
+
+    bool openScan;
+    void *value;
+    bool initializedValue;
+    bool hasBucketPinned;
+    bool hasLeafPinned;
+    bool scanEnded;
+    bool scanStarted;
+    bool endOfIndexReached;
+    int attrLength;
+    AttrType attrType;
+    CompOp compOp;
+    bool foundFirstValue;
+    bool foundLastValue;
+    bool useFirstLeaf;
+    PageNum currLeafNum;
+    PageNum currBucketNum;
+    PageNum nextBucketNum;
+    RID currRID;
+    RID nextRID;
+    struct IX_NodeHeader_L *leafHeader;
+    struct IX_BucketHeader *bucketHeader;
+    struct Node_Entry *leafEntries;
+    struct Bucket_Entry *bucketEntries;
+    char *leafKeys;
+    char *currKey;
+    char *nextKey;
+    char *nextNextKey;
+    int leafSlot;
+    int bucketSlot;
     PageNum currentPage;
     SlotNum currentSlot;
-    void *value;
+
 };
 
 //
@@ -129,7 +168,8 @@ private:
 //
 void IX_PrintError(RC rc);
 
-#define IX_EOF					(START_IX_WARN + 0) // end of file
+#define IX_INVALIDSCAN          (START_IX_WARN + 0)
+#define IX_EOF					(START_IX_WARN + 1) // end of file
 #define IX_LASTWARN				IX_EOF
 
 #define IX_NULLFILENAME   		(START_IX_ERR - 0) // null filename pointer
@@ -142,6 +182,7 @@ void IX_PrintError(RC rc);
 #define IX_INVALIDENTRY			(START_IX_ERR - 7) // 没有找到要删除的记录
 #define IX_NULLVALUEPOINTER     (START_IX_ERR - 8) // null value pointer
 #define IX_SCANNOTOPENED		(START_IX_ERR - 9) // the scan not opened
+
 
 #define IX_LASTERROR			IX_SCANNOTOPENED
 

@@ -14,6 +14,7 @@ using namespace std;
 // Error table
 //
 static char *IX_WarnMsg[] = {
+  (char*)"Invalid IndexScan",
   (char*)"reach the end of file"
 };
 
@@ -27,7 +28,7 @@ static char *IX_ErrorMsg[] = {
   (char*)"插入了rid重复的记录",
   (char*)"没有找到要删除的记录",
   (char*)"null value pointer",
-  (char*)"the scan not opened"
+  (char*)"the scan not opened",
 };
 
 //
