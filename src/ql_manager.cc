@@ -22,6 +22,17 @@ RC QL_Manager::Select  (int nSelAttrs,          // # attrs in select clause
     printf("QL_SELECT nSelAttrs = %d, nRelations = %d, nConditions = %d\n", \
         nSelAttrs, nRelations, nConditions);
 
+    cout << "   nSelAttrs = " << nSelAttrs << "\n";
+    for (int i = 0; i < nSelAttrs; i++)
+        cout << "   selAttrs[" << i << "]:" << selAttrs[i] << "\n";
+
+    cout << "   nRelations = " << nRelations << "\n";
+    for (int i = 0; i < nRelations; i++)
+        cout << "   relations[" << i << "] " << relations[i] << "\n";
+
+    cout << "   nCondtions = " << nConditions << "\n";
+    for (int i = 0; i < nConditions; i++)
+        cout << "   conditions[" << i << "]:" << conditions[i] << "\n";
     //set relEntries and attrEntries
     if(nRelations <= 0 || nRelations >2){
         return (QL_INVALIDSELECT);
@@ -68,6 +79,7 @@ RC QL_Manager::SelectOne  (int nSelAttrs,          // # attrs in select clause
         attrToIndex[attrString] = i;
         attrToType[attrString] = (attrEntries + i)->attrType;
     }
+    cout<<"flag"<<endl;
 
     //check selectattrs
     DataAttrInfo *dataAttrs = (DataAttrInfo*)malloc(nSelAttrs*sizeof(DataAttrInfo));
@@ -77,13 +89,17 @@ RC QL_Manager::SelectOne  (int nSelAttrs,          // # attrs in select clause
         if(exist == attrToIndex.end())
             return QL_ATTRNAMENOTFOUND;
         int selAttrIndex = attrToIndex[selAttrName];
-        memcpy(dataAttrs[i].relName,  selAttrs[i].relName , MAXNAME+1);
+        if (selAttrs[i].relName)
+            memcpy(dataAttrs[i].relName,  selAttrs[i].relName , MAXNAME+1);
+        else
+            dataAttrs[i].relName[0] = '\0';
         memcpy(dataAttrs[i].attrName, selAttrs[i].attrName, MAXNAME+1);
         dataAttrs[i].attrType = (attrEntries + selAttrIndex)->attrType;
         dataAttrs[i].attrLength = (attrEntries + selAttrIndex)->attrLength;
         dataAttrs[i].offset  = (attrEntries + selAttrIndex)->offset;
         dataAttrs[i].indexNo = (attrEntries + selAttrIndex)->indexNo;
     }
+    cout<<"flag"<<endl;
 
     Printer printer(dataAttrs, nSelAttrs);
 
@@ -112,6 +128,7 @@ RC QL_Manager::SelectOne  (int nSelAttrs,          // # attrs in select clause
             }
         }
     }
+    cout<<"flag"<<endl;
 
     //build nodes
     QL_NODE* firstNode;
@@ -138,6 +155,7 @@ RC QL_Manager::SelectOne  (int nSelAttrs,          // # attrs in select clause
         firstNode->nextNode = NULL;
         firstNode->print();
     }
+    cout<<"flag"<<endl;
     QL_NODE* tempNode = firstNode;
     for (int i = 1; i < nConditions; i++) {
         tempNode->nextNode = new QL_NODE(conditions[i], *(AttrType *)(types + i));
