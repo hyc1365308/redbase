@@ -312,6 +312,9 @@ RC QL_Manager::Update  (const char *relName,    // relation to update
         }
         if(attrToType[updName] != attrToType[rhsUpdateName])
             return QL_WRONGTYPE;
+        if(attrEntries[attrToIndex[updName]].attrLength != attrEntries[attrToIndex[rhsUpdateName]].attrLength){
+            return QL_WRONGTYPE;
+        }
     }else{
         if(rhsValue.type != attrToType[updName])
             return QL_WRONGTYPE;
@@ -414,7 +417,34 @@ RC QL_Manager::Update  (const char *relName,    // relation to update
         if ((rc = rec.GetRid(rid))){
             return (rc);
         }
-        
+
+        int updIndex = attrToIndex[updName];
+        int updOffset = attrEntries[updIndex].offset;
+        int updLength = attrEntries[updIndex].attrLength;
+        char* updateData;
+        if(bIsValue == 1){
+            updateData = (char*)(rhsValue.data);
+        }else{
+            string rhsUpdateName(rhsRelAttr.attrName);
+            int rhsIndex = attrToIndex[rhsUpdateName];
+            int rhsOffset = attrEntries[rhsIndex].offset;
+            updateData = recData + rhsOffset;
+        }
+        memcpy(recData + updOffset, updateData, updLength);
+
+        if((rc = fh.UpdateRec(rec))){
+            return (rc);
+        }
+        //以下为调试输出
+        RM_Record newRec;
+        if((rc = fh.GetRec(rid, newRec))){
+            return (rc);
+        }
+        char *newRecData;
+        if((rc = newRec.GetData(newRecData))){
+            return (rc);
+        }
+        printer.Print(cout, newRecData);
     }
 
     printer.PrintFooter(cout);
