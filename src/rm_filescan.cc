@@ -116,3 +116,10 @@ RC RM_FileScan::CloseScan(){
 	openScan = false;
 	return 0;
 }
+
+RC RM_FileScan::ResetScan(){
+	RC rc = 0;
+	currentPage = 1;
+	currentSlot = -1;
+	return rc;
+}

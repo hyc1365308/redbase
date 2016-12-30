@@ -18,7 +18,9 @@ static char *QL_WarnMsg[] = {
   (char*)"wrong type in input record",
   (char*)"attribute name not found",
   (char*)"insert null into notNull",
-  (char*)"Invalid Select"
+  (char*)"Invalid Select",
+  (char*)"conflict occur in attrName",
+  (char*)"left attribute must belong to the left table"
 };
 
 static char *QL_ErrorMsg[] = {
@@ -29,7 +31,8 @@ static char *QL_ErrorMsg[] = {
   (char*)"invalid conditions",
   (char*)"select wrong compare function in QL_NODE",
   (char*)"QL_NODE error",
-  (char*)"Record Null"
+  (char*)"Record Null",
+  (char*)"AttrToRel error"
 };
 
 //

@@ -80,6 +80,9 @@ bool QL_NODE::compare(const char *record1,const char* record2){
     else if (compareType == 2){//two param
         return compareTwo(record1, record2);
     }
+    else if (compareType == 3){//two record rec1 and rec1
+        return compareTwo(record1, record1);
+    }
     else return QL_NODEERROR;
 }
 
@@ -99,7 +102,7 @@ bool QL_NODE::compareOne(const char *record){
         else if (compareType == 1){//one param
             return comparator((void *)(record + attrOffset1), rhsValue.data, attrType, attrLength1);
         }
-        else if (compareType == 2){
+        else if ((compareType == 2) || (compareType == 3)){
             return QL_NODEFUNCSELECTERROR;
         }
         else return QL_NODEERROR;
@@ -122,6 +125,9 @@ bool QL_NODE::compareTwo(const char *record1,const char *record2){
         }
         else if (compareType == 2){
             return comparator((void *)(record1 + attrOffset1), (void *)(record2 + attrOffset2), attrType, attrLength1);
+        }
+        else if (compareType == 3){
+            return comparator((void *)(record1 + attrOffset1), (void *)(record1 + attrOffset1), attrType, attrLength1);
         }
         else return QL_NODEERROR;
     }
@@ -156,4 +162,8 @@ void QL_NODE::print(){
     cout<<"attrOffset2   :"<<attrOffset2<<endl;
     cout<<"attrLength2   :"<<attrLength2<<endl;
     cout<<"nextNode      :"<<(nextNode == NULL? "NULL":"NOT NULL")<<endl<<endl;
+}
+
+void QL_NODE::setType(int type){
+    this->compareType = type;
 }
