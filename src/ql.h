@@ -22,6 +22,7 @@
 //
 class QL_Manager {
 public:
+    static const int NO_INDEXES  = -1;
     QL_Manager (SM_Manager &smm, IX_Manager &ixm, RM_Manager &rmm);
     ~QL_Manager();                       // Destructor
 
@@ -149,7 +150,9 @@ void QL_PrintError(RC rc);
 #define QL_ATTRNAMENOTFOUND     (START_QL_WARN + 2)  //attribute name not found
 #define QL_NOTNULL              (START_QL_WARN + 3)
 #define QL_INVALIDSELECT        (START_QL_WARN + 4)
-#define QL_LASTWARN             QL_NOTNULL
+#define QL_INVALIDRELATION      (START_QL_WARN + 5)
+#define QL_PRIMARYINSERTED      (START_QL_WARN + 6)
+#define QL_LASTWARN             QL_PRIMARYINSERTED
 
 #define QL_NODEBUILDERROR       (START_QL_ERR - 0)   //error in build QL_NODES
 #define QL_NODEINITED           (START_QL_ERR - 1)   //QL_NODE already inited

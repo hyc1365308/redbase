@@ -170,7 +170,8 @@ void IX_PrintError(RC rc);
 
 #define IX_INVALIDSCAN          (START_IX_WARN + 0)
 #define IX_EOF					(START_IX_WARN + 1) // end of file
-#define IX_LASTWARN				IX_EOF
+#define IX_INVALIDINDEX         (START_IX_WARN + 2)
+#define IX_LASTWARN				IX_INVALIDINDEX
 
 #define IX_NULLFILENAME   		(START_IX_ERR - 0) // null filename pointer
 #define IX_INVALIDATTRLENGTH	(START_IX_ERR - 1) // invalid attrLength

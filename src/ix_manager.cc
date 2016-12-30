@@ -141,7 +141,7 @@ RC IX_Manager::OpenIndex	(const char *fileName,
 	if ((rc = pfm->OpenFile(indexFile, indexHandle.pfh)) ||
 		(rc = indexHandle.pfh.GetThisPage(firstPage, headerPH))){
 		delete indexFile;
-		return (rc);
+		return (IX_INVALIDINDEX);
 	}
 
 	delete indexFile;

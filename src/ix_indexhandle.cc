@@ -969,3 +969,12 @@ RC IX_IndexHandle::FindRecordPage(PF_PageHandle &leafPH, PageNum &leafPage, void
 	return (rc);
 }
 
+RC IX_IndexHandle::ForcePages(){
+  RC rc = 0;
+  if (isOpenHandle == false)
+    return (IX_INVALIDINDEXHANDLE);
+  pfh.ForcePages();
+  return (rc);
+}
+
+

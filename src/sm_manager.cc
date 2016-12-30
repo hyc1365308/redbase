@@ -126,6 +126,7 @@ RC SM_Manager::CreateTable(const char *relName,   // create relation relName
         return (SM_INVALIDRELNAME);
     }
     int totalRecSize = 0;
+    int primaryKeyIndex = -1;
     for(int i = 0;i < attrCount; i++){
         if(strlen(attributes[i].attrName) > MAXNAME){
             return (SM_INVALIDATTR);
@@ -141,6 +142,13 @@ RC SM_Manager::CreateTable(const char *relName,   // create relation relName
             totalRecSize += attributes[i].attrLength;
             relAttrbutes.insert(attrString);
         }
+        if(attrbutes[i].isPrimaryKey == 1){
+            primaryKeyIndex = i;
+        }
+    }
+
+    if(primaryKeyIndex == -1){
+        return (SM_INVALIDREL);
     }
     //totalRecSize += attrCount*1.0/8.0;
     if((rc = rmm.CreateFile(relName, totalRecSize)))
@@ -160,6 +168,10 @@ RC SM_Manager::CreateTable(const char *relName,   // create relation relName
     }
     if((rc = attrcatFH.ForcePages()) || (rc = relcatFH.ForcePages())){
         return rc;
+    }
+    
+    if((rc = CreateIndex(relName, attrbutes[primaryKeyIndex].attrName))){
+        return (rc);
     }
     
     return rc;

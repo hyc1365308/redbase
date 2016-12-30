@@ -18,7 +18,9 @@ static char *QL_WarnMsg[] = {
   (char*)"wrong type in input record",
   (char*)"attribute name not found",
   (char*)"insert null into notNull",
-  (char*)"Invalid Select"
+  (char*)"Invalid Select",
+  (char*)"Invalid Relation",
+  (char*)"Primary Key Inserted"
 };
 
 static char *QL_ErrorMsg[] = {

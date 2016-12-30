@@ -15,7 +15,8 @@ using namespace std;
 //
 static char *IX_WarnMsg[] = {
   (char*)"Invalid IndexScan",
-  (char*)"reach the end of file"
+  (char*)"reach the end of file",
+  (char*)"Invalid index"
 };
 
 static char *IX_ErrorMsg[] = {

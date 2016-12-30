@@ -21,6 +21,7 @@
 #include <set>
 
 #define MAX_DB_NAME 255
+
 typedef struct RelCatEntry{
   char relName[MAXNAME + 1];
   int tupleLength;

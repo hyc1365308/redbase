@@ -173,7 +173,7 @@ RC QL_Manager::SelectOne  (int nSelAttrs,          // # attrs in select clause
     for (int i = 1; i < nConditions; i++) {
         tempNode->nextNode = new QL_NODE(conditions[i], *(AttrType *)(types + i));
         tempNode = tempNode->nextNode;
-        string lhsName(conditions[0].lhsAttr.attrName);
+        string lhsName(conditions[i].lhsAttr.attrName);
         int attrIndex1 = attrToIndex[lhsName];
         AttrCatEntry entry1 = *(attrEntries + attrIndex1);
         int attrOffset1 = entry1.offset;
@@ -181,7 +181,7 @@ RC QL_Manager::SelectOne  (int nSelAttrs,          // # attrs in select clause
         int attrIndex   = entry1.attrNum;
         int recLength   = relEntries->tupleLength;
         if (conditions[i].bRhsIsAttr){
-            string rhsName(conditions[0].rhsAttr.attrName);
+            string rhsName(conditions[i].rhsAttr.attrName);
             int attrIndex2 = attrToIndex[rhsName];
             AttrCatEntry entry2 = *(attrEntries + attrIndex2);
             int attrOffset2 = entry2.offset;
@@ -357,7 +357,7 @@ RC QL_Manager::SelectTwo  (int nSelAttrs,          // # attrs in select clause
     for (int i = 1; i < nConditions; i++) {
         tempNode->nextNode = new QL_NODE(conditions[i], *(AttrType *)(types + i));
         tempNode = tempNode->nextNode;
-        string lhsName(conditions[0].lhsAttr.attrName);
+        string lhsName(conditions[i].lhsAttr.attrName);
         int attrIndex1 = attrToIndex[lhsName];
         AttrCatEntry entry1 = *(attrEntries + attrIndex1);
         int attrOffset1 = entry1.offset;
@@ -365,7 +365,7 @@ RC QL_Manager::SelectTwo  (int nSelAttrs,          // # attrs in select clause
         int attrIndex   = entry1.attrNum;
         int recLength   = relEntries->tupleLength;
         if (conditions[i].bRhsIsAttr){
-            string rhsName(conditions[0].rhsAttr.attrName);
+            string rhsName(conditions[i].rhsAttr.attrName);
             int attrIndex2 = attrToIndex[rhsName];
             AttrCatEntry entry2 = *(attrEntries + attrIndex2);
             int attrOffset2 = entry2.offset;
@@ -445,13 +445,39 @@ RC QL_Manager::Insert  (const char *relName,    // relation to insert into
         return (rc);
     }
 
+    int primaryKeyIndex = -1;
     //check value type
     for (int i = 0; i < nValues; i++){
         if (values[i].type != (attrEntries + i)->attrType){
             free(attrEntries);
             return QL_WRONGTYPE;
         }
+        if((attrEntries + i)->isPrimaryKey == 1){
+            primaryKeyIndex = i;
+        }
     }
+
+    if(primaryKeyIndex == -1){
+        return (QL_INVALIDRELATION);
+    }
+
+    RID insertedRid;
+    IX_IndexHandle ih;
+    IX_IndexScan is;
+    if((rc = ixm.OpenIndex(relName, attrEntries[primaryKeyIndex].indexNo, ih))){
+        return (rc);
+    }
+    if((rc = is.OpenScan(ih, EQ_OP, values[primaryKeyIndex].data))){
+        return (rc);
+    }
+    if((rc = is.GetNextEntry(insertedRid)) == 0){
+        return (QL_PRIMARYINSERTED);
+    }else{
+        if(rc != IX_EOF){
+            return (rc);
+        }
+    }
+
 
     //prepare the insert record
     tempRecord = (char *)malloc(relEntries->tupleLength);
@@ -463,7 +489,7 @@ RC QL_Manager::Insert  (const char *relName,    // relation to insert into
         memcpy(tempRecord + offset, values[i].data, attrEntries[i].attrLength);
         offset += attrEntries[i].attrLength;
     }
-    free(attrEntries);
+    
 
     RID rid;
     RM_FileHandle fh;
@@ -474,8 +500,24 @@ RC QL_Manager::Insert  (const char *relName,    // relation to insert into
         return (rc);
     }
     cout<<"RID: PageNum = "<<rid.Page()<<" SlotNum = "<<rid.Slot()<<endl;
+    for(int i = 0; i < relEntries->attrCount; i++){
+        if(attrEntries[i].indexNo != NO_INDEXES){
+            IX_IndexHandle ih;
+            if((rc = ixm.OpenIndex(relName, attrEntries[i].indexNo, ih))){
+                free(tempRecord);
+                free(attrEntries);
+                return (rc);
+            }
+            if((rc = ih.InsertEntry(tempRecord+attrEntries[i].offset, rid)) ||
+                (rc = ih.ForcePages())){
+                free(tempRecord);
+                free(attrEntries);
+                return (rc);   
+            }
+        }
+    }
     free(tempRecord);
-
+    free(attrEntries);
     return rc;
 }           
 
@@ -564,7 +606,7 @@ RC QL_Manager::Delete  (const char *relName,    // relation to delete from
     for (int i = 1; i < nConditions; i++) {
         tempNode->nextNode = new QL_NODE(conditions[i], *(AttrType *)(types + i));
         tempNode = tempNode->nextNode;
-        string lhsName(conditions[0].lhsAttr.attrName);
+        string lhsName(conditions[i].lhsAttr.attrName);
         int attrIndex1 = attrToIndex[lhsName];
         AttrCatEntry entry1 = *(attrEntries + attrIndex1);
         int attrOffset1 = entry1.offset;
@@ -572,7 +614,7 @@ RC QL_Manager::Delete  (const char *relName,    // relation to delete from
         int attrIndex   = entry1.attrNum;
         int recLength   = relEntries->tupleLength;
         if (conditions[i].bRhsIsAttr){
-            string rhsName(conditions[0].rhsAttr.attrName);
+            string rhsName(conditions[i].rhsAttr.attrName);
             int attrIndex2 = attrToIndex[rhsName];
             AttrCatEntry entry2 = *(attrEntries + attrIndex2);
             int attrOffset2 = entry2.offset;
@@ -622,8 +664,26 @@ RC QL_Manager::Delete  (const char *relName,    // relation to delete from
         if (!compare) continue;
         printer.Print(cout, recData);
         RID rid;
-        if ((rc = rec.GetRid(rid)) ||
-            (rc = fh.DeleteRec(rid)))
+        if((rc = rec.GetRid(rid))){
+            free(attrEntries);
+            return (rc);
+        }
+
+        for(int i = 0; i < relEntries -> attrCount; i++){
+            if(attrEntries[i].indexNo != NO_INDEXES){
+                IX_IndexHandle ih;
+                if((rc = ixm.OpenIndex(relName, attrEntries[i].indexNo, ih))){
+                    free(attrEntries);
+                    return (rc);
+                }
+                if((rc = ih.DeleteEntry(recData + attrEntries[i].offset, rid)) ||
+                    (rc = ih.ForcePages())){
+                    free(attrEntries);
+                    return (rc);   
+                }
+            }
+        }
+        if ((rc = fh.DeleteRec(rid)))
             return rc;
     }
 
@@ -636,6 +696,7 @@ RC QL_Manager::Delete  (const char *relName,    // relation to delete from
     if ((rc = fh.ForcePages()))
         return rc;
 
+    free(attrEntries);
     return rc;
 }   
 
@@ -758,7 +819,7 @@ RC QL_Manager::Update  (const char *relName,    // relation to update
     for (int i = 1; i < nConditions; i++) {
         tempNode->nextNode = new QL_NODE(conditions[i], *(AttrType *)(types + i));
         tempNode = tempNode->nextNode;
-        string lhsName(conditions[0].lhsAttr.attrName);
+        string lhsName(conditions[i].lhsAttr.attrName);
         int attrIndex1 = attrToIndex[lhsName];
         AttrCatEntry entry1 = *(attrEntries + attrIndex1);
         int attrOffset1 = entry1.offset;
@@ -766,7 +827,7 @@ RC QL_Manager::Update  (const char *relName,    // relation to update
         int attrIndex   = entry1.attrNum;
         int recLength   = relEntries->tupleLength;
         if (conditions[i].bRhsIsAttr){
-            string rhsName(conditions[0].rhsAttr.attrName);
+            string rhsName(conditions[i].rhsAttr.attrName);
             int attrIndex2 = attrToIndex[rhsName];
             AttrCatEntry entry2 = *(attrEntries + attrIndex2);
             int attrOffset2 = entry2.offset;
@@ -824,19 +885,66 @@ RC QL_Manager::Update  (const char *relName,    // relation to update
         int updOffset = attrEntries[updIndex].offset;
         int updLength = attrEntries[updIndex].attrLength;
         char* updateData;
+        char nullString[10] = "_null";
         if(bIsValue == 1){
-            updateData = (char*)(rhsValue.data);
+            if(updateNULL){
+                updateData = (char*)nullString;
+            }else{
+                updateData = (char*)(rhsValue.data);
+            }
         }else{
             string rhsUpdateName(rhsRelAttr.attrName);
             int rhsIndex = attrToIndex[rhsUpdateName];
             int rhsOffset = attrEntries[rhsIndex].offset;
             updateData = recData + rhsOffset;
         }
+
+
+        //更新index
+        IX_IndexHandle ih;
+        IX_IndexScan is;
+        if(attrEntries[updIndex].indexNo != NO_INDEXES){
+            if((rc = ixm.OpenIndex(relName, attrEntries[updIndex].indexNo, ih))){
+                free(attrEntries);
+                return (rc);
+            }
+            if((rc = ih.DeleteEntry(recData + updOffset, rid))){
+                free(attrEntries);
+                return (rc);
+            }
+        }
+
+        
         memcpy(recData + updOffset, updateData, updLength);
 
         if((rc = fh.UpdateRec(rec))){
+            free(attrEntries);
             return (rc);
         }
+
+        if(attrEntries[updIndex].indexNo != NO_INDEXES){
+            if(attrEntries[updIndex].isPrimaryKey == 1){
+                if((rc = is.OpenScan(ih, EQ_OP, recData + updOffset))){
+                    free(attrEntries);
+                    return (rc);
+                }
+                RID insertedRid;
+                if((rc = is.GetNextEntry(insertedRid)) == 0){
+                    free(attrEntries);
+                    return (QL_PRIMARYINSERTED);
+                }else{
+                    if(rc != IX_EOF){
+                        free(attrEntries);
+                        return (rc);
+                    }
+                }
+            }
+            if((rc = ih.InsertEntry(recData + updOffset, rid)) || (rc = ih.ForcePages())){
+                free(attrEntries);
+                return(rc);
+            }
+        }
+
         //以下为调试输出
         RM_Record newRec;
         if((rc = fh.GetRec(rid, newRec))){
@@ -858,6 +966,7 @@ RC QL_Manager::Update  (const char *relName,    // relation to update
     if ((rc = fh.ForcePages()))
         return rc;
 
+    free(attrEntries);
     return rc;
 }
 
