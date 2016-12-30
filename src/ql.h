@@ -68,18 +68,22 @@ private:
     IX_Manager &ixm;
     RM_Manager &rmm;
 
+    //Get real relation 
+    RC checkRelAttr(const RelAttr relAttr, AttrCatEntry *&attrEntry, int &index);
+
     //map from each AttrName to a set with Relname
     std::map<std::string, std::set<std::string> > attrToRel;
+    std::map<std::string, int> relToIndex;
     std::map<std::string, int> attrToIndex;
-    std::map<std::string, int> attrToIndexSecond;
+    std::map<std::string, int> attrToIndex2;
     std::map<std::string, AttrType> attrToType;
-    std::map<std::string, AttrType> attrToTypeSecond;
+    std::map<std::string, AttrType> attrToType2;
 
     AttrType *types;
     RelCatEntry *relEntries;
-    RelCatEntry *relEntriesSecond;
+    RelCatEntry *relEntries2;
     AttrCatEntry *attrEntries;
-    AttrCatEntry *attrEntriesSecond;
+    AttrCatEntry *attrEntries2;
 
     char *tempRecord;
 
@@ -94,6 +98,7 @@ public:
                  int attrOffset2, int attrLength2);
 
     void print();
+    void setType(int type);
 
     bool compare(const char *record1,const char* record2);
 
@@ -114,6 +119,7 @@ private:
     int compareType;  //   0:not inited
                       //   1:for one record 
                       //   2:for two record
+                      //   3:for two record rec1 and rec1
     int compareToNull;//  -1:error 
                       //   0:not compare to null 
                       //   1:judge if equal to Null 
@@ -152,7 +158,10 @@ void QL_PrintError(RC rc);
 #define QL_INVALIDSELECT        (START_QL_WARN + 4)
 #define QL_INVALIDRELATION      (START_QL_WARN + 5)
 #define QL_PRIMARYINSERTED      (START_QL_WARN + 6)
-#define QL_LASTWARN             QL_PRIMARYINSERTED
+#define QL_ATTRNAMECONFLICT     (START_QL_WARN + 7)  //conflict occur in attrName
+#define QL_LEFTATTRERROR        (START_QL_WARN + 8)  //left attribute must belong to the left table
+#define QL_LASTWARN             QL_LEFTATTRERROR
+
 
 #define QL_NODEBUILDERROR       (START_QL_ERR - 0)   //error in build QL_NODES
 #define QL_NODEINITED           (START_QL_ERR - 1)   //QL_NODE already inited
@@ -162,6 +171,7 @@ void QL_PrintError(RC rc);
 #define QL_NODEFUNCSELECTERROR  (START_QL_ERR - 5)   //select wrong compare function in QL_NODE
 #define QL_NODEERROR            (START_QL_ERR - 6)   //QL_NODE error
 #define QL_RECORDNULL           (START_QL_ERR - 7)   //Record Null
-#define QL_LASTERROR            QL_RECORDNULL
+#define QL_ATTRTORELERROR       (START_QL_ERR - 8)   //AttrToRel error
+#define QL_LASTERROR            QL_ATTRTORELERROR
 
 #endif

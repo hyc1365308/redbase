@@ -43,7 +43,7 @@ RC QL_Manager::Select  (int nSelAttrs,          // # attrs in select clause
             return (rc);
         }
     }else if(nRelations == 2){
-        if((rc = SelectOne(nSelAttrs, selAttrs, nRelations, relations, nConditions, conditions))){
+        if((rc = SelectTwo(nSelAttrs, selAttrs, nRelations, relations, nConditions, conditions))){
             return (rc);
         }
     }
@@ -245,23 +245,43 @@ RC QL_Manager::SelectTwo  (int nSelAttrs,          // # attrs in select clause
     RC rc = 0;
 
     RM_Record unusedRec;
-    if ((rc = smm.GetRelEntry(relations[0], unusedRec, relEntries))){
+    RM_Record unusedRec2;
+    if ((rc = smm.GetRelEntry(relations[0], unusedRec, relEntries)) ||
+        (rc = smm.GetRelEntry(relations[1], unusedRec2, relEntries2)) ){
         return (rc);
     }
+    //printf("name: %s, %s\n", relEntries->relName, relEntries2->relName);
 
     attrEntries = (AttrCatEntry *)malloc(sizeof(AttrCatEntry) * (relEntries->attrCount));
-    if ((rc = smm.GetAttrForRel(relEntries, attrEntries, attrToRel))){
+    attrEntries2 = (AttrCatEntry *)malloc(sizeof(AttrCatEntry) * (relEntries->attrCount));
+    if ((rc = smm.GetAttrForRel(relEntries, attrEntries, attrToRel)) ||
+        (rc = smm.GetAttrForRel(relEntries2, attrEntries2, attrToRel))){
         free(attrEntries);
+        free(attrEntries2);
         return (rc);
     }
 
-    //set attrToIndex, attrToType
+
+    //set attrToIndex, attrToType, relToIndex
+    relToIndex.clear();
+    string relString(relEntries->relName);
+    relToIndex[relString] = 0;
+    string relString2(relEntries2->relName);
+    relToIndex[relString2] = 1;
+
     attrToIndex.clear();
+    attrToIndex2.clear();
     attrToType.clear();
+    attrToType2.clear();
     for (int i = 0; i < relEntries->attrCount; i++){
         string attrString((attrEntries + i)->attrName);
         attrToIndex[attrString] = i;
         attrToType[attrString] = (attrEntries + i)->attrType;
+    }
+    for (int i = 0; i < relEntries2->attrCount; i++){
+        string attrString((attrEntries2 + i)->attrName);
+        attrToIndex2[attrString] = i;
+        attrToType2[attrString] = (attrEntries2 + i)->attrType;
     }
 
     bool isSelectAll = false;
@@ -271,31 +291,42 @@ RC QL_Manager::SelectTwo  (int nSelAttrs,          // # attrs in select clause
         }
     }
     //check selectattrs
-    DataAttrInfo *dataAttrs = (DataAttrInfo*)malloc((relEntries->attrCount)*sizeof(DataAttrInfo));
+    DataAttrInfo *dataAttrs = (DataAttrInfo*)malloc((relEntries->attrCount + relEntries2->attrCount)*sizeof(DataAttrInfo));
     int printerInit = 0;
     if(isSelectAll){
         for(int i = 0; i < relEntries->attrCount; i++){
             memcpy(dataAttrs[i].relName,  (attrEntries + i)->relName , MAXNAME+1);
             memcpy(dataAttrs[i].attrName, (attrEntries + i)->attrName, MAXNAME+1);
-            dataAttrs[i].attrType = (attrEntries + i)->attrType;
+            dataAttrs[i].attrType   = (attrEntries + i)->attrType;
             dataAttrs[i].attrLength = (attrEntries + i)->attrLength;
-            dataAttrs[i].offset  = (attrEntries + i)->offset;
-            dataAttrs[i].indexNo = (attrEntries + i)->indexNo;
+            dataAttrs[i].offset     = (attrEntries + i)->offset;
+            dataAttrs[i].indexNo    = (attrEntries + i)->indexNo;
         }
-        printerInit = relEntries -> attrCount;
+        int entryOffset = relEntries->attrCount;
+        for(int i = 0; i < relEntries2->attrCount; i++){
+            memcpy(dataAttrs[i + entryOffset].relName,  (attrEntries2 + i)->relName , MAXNAME+1);
+            memcpy(dataAttrs[i + entryOffset].attrName, (attrEntries2 + i)->attrName, MAXNAME+1);
+            dataAttrs[i + entryOffset].attrType   = (attrEntries2 + i)->attrType;
+            dataAttrs[i + entryOffset].attrLength = (attrEntries2 + i)->attrLength;
+            dataAttrs[i + entryOffset].offset     = (attrEntries2 + i)->offset + relEntries->tupleLength;
+            dataAttrs[i + entryOffset].indexNo    = (attrEntries2 + i)->indexNo;
+        }
+        printerInit = relEntries -> attrCount + relEntries2 -> attrCount;
     }else{
         for(int i = 0; i < nSelAttrs; i++){
-            string selAttrName(selAttrs[i].attrName);
-            map<string, int>::iterator exist = attrToIndex.find(selAttrName);
-            if(exist == attrToIndex.end())
-                return QL_ATTRNAMENOTFOUND;
-            int selAttrIndex = attrToIndex[selAttrName];
-            memcpy(dataAttrs[i].relName,   (attrEntries + selAttrIndex)->relName, MAXNAME+1);
-            memcpy(dataAttrs[i].attrName, (attrEntries + selAttrIndex)->attrName, MAXNAME+1);
-            dataAttrs[i].attrType = (attrEntries + selAttrIndex)->attrType;
-            dataAttrs[i].attrLength = (attrEntries + selAttrIndex)->attrLength;
-            dataAttrs[i].offset  = (attrEntries + selAttrIndex)->offset;
-            dataAttrs[i].indexNo = (attrEntries + selAttrIndex)->indexNo;
+            AttrCatEntry* tempAttrEntry;
+            int selAttrIndex;
+            if ((rc = checkRelAttr(selAttrs[i], tempAttrEntry, selAttrIndex)))
+                return rc;
+            memcpy(dataAttrs[i].relName,   (tempAttrEntry + selAttrIndex)->relName, MAXNAME+1);
+            memcpy(dataAttrs[i].attrName, (tempAttrEntry + selAttrIndex)->attrName, MAXNAME+1);
+            dataAttrs[i].attrType = (tempAttrEntry + selAttrIndex)->attrType;
+            dataAttrs[i].attrLength = (tempAttrEntry + selAttrIndex)->attrLength;
+            if (tempAttrEntry == attrEntries)
+                dataAttrs[i].offset  = (tempAttrEntry + selAttrIndex)->offset;
+            else
+                dataAttrs[i].offset  = (tempAttrEntry + selAttrIndex)->offset + relEntries->tupleLength;
+            dataAttrs[i].indexNo = (tempAttrEntry + selAttrIndex)->indexNo;
         }
         printerInit = nSelAttrs;
     }
@@ -307,16 +338,20 @@ RC QL_Manager::SelectTwo  (int nSelAttrs,          // # attrs in select clause
     for (int i = 0; i < nConditions; i++) {
         string lhsName(conditions[i].lhsAttr.attrName);
         map<string, int>::iterator exist = attrToIndex.find(lhsName);
-        if (exist == attrToIndex.end())
+        if (exist == attrToIndex.end()){
             return QL_ATTRNAMENOTFOUND;
+        }
         memcpy(types + i, &(attrToType[lhsName]), sizeof(AttrType));
         if (conditions[i].bRhsIsAttr){
-            string rhsName(conditions[i].rhsAttr.attrName);
-            exist = attrToIndex.find(rhsName);
-            if (exist == attrToIndex.end())
-                return QL_ATTRNAMENOTFOUND;
-            if (attrToType[lhsName] != attrToType[rhsName])
+            //the rhsAttr can be from every table
+            AttrCatEntry* tempAttrEntry;
+            int tempAttrIndex;
+            if ((rc = checkRelAttr(conditions[i].rhsAttr, tempAttrEntry, tempAttrIndex)))
+                return rc;
+
+            if (attrToType[lhsName] != (tempAttrEntry + tempAttrIndex)->attrType)
                 return QL_WRONGTYPE;
+
         }
         else{
             if (conditions[i].rhsValue.data == NULL){//comp to NULL
@@ -333,6 +368,14 @@ RC QL_Manager::SelectTwo  (int nSelAttrs,          // # attrs in select clause
     if (nConditions == 0)
         firstNode = NULL;
     else{
+        AttrCatEntry* tempAttrEntry;
+        int tempAttrIndex;
+        if ((rc = checkRelAttr(conditions[0].lhsAttr, tempAttrEntry, tempAttrIndex)))
+            return rc;
+
+        if (tempAttrEntry != attrEntries)
+            return QL_LEFTATTRERROR;
+
         firstNode = new QL_NODE(conditions[0], *(AttrType *)types);
         string lhsName(conditions[0].lhsAttr.attrName);
         int attrIndex1 = attrToIndex[lhsName];
@@ -342,12 +385,16 @@ RC QL_Manager::SelectTwo  (int nSelAttrs,          // # attrs in select clause
         int attrIndex   = entry1.attrNum;
         int recLength   = relEntries->tupleLength;
         if (conditions[0].bRhsIsAttr){
-            string rhsName(conditions[0].rhsAttr.attrName);
-            int attrIndex2 = attrToIndex[rhsName];
-            AttrCatEntry entry2 = *(attrEntries + attrIndex2);
+            //the rhsAttr can be from every table
+            if ((rc = checkRelAttr(conditions[0].rhsAttr, tempAttrEntry, tempAttrIndex)))
+                return rc;
+
+            AttrCatEntry entry2 = *(tempAttrEntry + tempAttrIndex);
             int attrOffset2 = entry2.offset;
             int attrLength2 = entry2.attrLength;
             firstNode->setParams(attrOffset1, attrLength1, attrIndex, recLength, attrOffset2, attrLength2);
+            if (tempAttrEntry == attrEntries)
+                firstNode->setType(3);
         }
         else firstNode->setParams(attrOffset1, attrLength1, attrIndex, recLength);
         firstNode->nextNode = NULL;
@@ -355,6 +402,14 @@ RC QL_Manager::SelectTwo  (int nSelAttrs,          // # attrs in select clause
     }
     QL_NODE* tempNode = firstNode;
     for (int i = 1; i < nConditions; i++) {
+        AttrCatEntry* tempAttrEntry;
+        int tempAttrIndex;
+        if ((rc = checkRelAttr(conditions[i].lhsAttr, tempAttrEntry, tempAttrIndex)))
+            return rc;
+
+        if (tempAttrEntry != attrEntries)
+            return QL_LEFTATTRERROR;
+
         tempNode->nextNode = new QL_NODE(conditions[i], *(AttrType *)(types + i));
         tempNode = tempNode->nextNode;
         string lhsName(conditions[i].lhsAttr.attrName);
@@ -365,12 +420,16 @@ RC QL_Manager::SelectTwo  (int nSelAttrs,          // # attrs in select clause
         int attrIndex   = entry1.attrNum;
         int recLength   = relEntries->tupleLength;
         if (conditions[i].bRhsIsAttr){
-            string rhsName(conditions[i].rhsAttr.attrName);
-            int attrIndex2 = attrToIndex[rhsName];
-            AttrCatEntry entry2 = *(attrEntries + attrIndex2);
+            //the rhsAttr can be from every table
+            if ((rc = checkRelAttr(conditions[i].rhsAttr, tempAttrEntry, tempAttrIndex)))
+                return rc;
+
+            AttrCatEntry entry2 = *(tempAttrEntry + tempAttrIndex);
             int attrOffset2 = entry2.offset;
             int attrLength2 = entry2.attrLength;
             tempNode->setParams(attrOffset1, attrLength1, attrIndex, recLength, attrOffset2, attrLength2);
+            if (tempAttrEntry == attrEntries)
+                tempNode->setType(3);
         }
         else tempNode->setParams(attrOffset1, attrLength1, attrIndex, recLength);
         tempNode->nextNode = NULL;
@@ -390,14 +449,17 @@ RC QL_Manager::SelectTwo  (int nSelAttrs,          // # attrs in select clause
         return rc;
 
     RM_Record rec1, rec2;
-    char *recData1, *recData2;
+    char *recData1, *recData2, *mixedData;
 
+    mixedData = (char *)malloc(relEntries->tupleLength + relEntries2->tupleLength);
     while((rc = fs1.GetNextRec(rec1)) == 0){
         while((rc = fs2.GetNextRec(rec2)) == 0){
             bool compare = true;
             if ((rc = rec1.GetData(recData1)) ||
-                (rc = rec2.GetData(recData2)))
+                (rc = rec2.GetData(recData2))){
+                free(mixedData);
                 return rc;
+            }
 
             tempNode = firstNode;
             while(tempNode != NULL){
@@ -408,9 +470,19 @@ RC QL_Manager::SelectTwo  (int nSelAttrs,          // # attrs in select clause
                 tempNode = tempNode->nextNode;
             }
             if (!compare) continue;
-            //printer.Print(cout, recData);
+            memset(mixedData, 0, (relEntries->tupleLength) + (relEntries2->tupleLength));
+            memcpy(mixedData, recData1, relEntries->tupleLength);
+            memcpy(mixedData + relEntries->tupleLength, recData2, relEntries2->tupleLength);
+            printer.Print(cout, mixedData);
         }
+        if (rc != RM_EOF){
+            free(mixedData);
+            return rc;
+        }
+        if ((rc = fs2.ResetScan()))
+            return rc;
     }
+    free(mixedData);
 
     printer.PrintFooter(cout);
     if (rc != RM_EOF)
@@ -971,4 +1043,50 @@ RC QL_Manager::Update  (const char *relName,    // relation to update
 }
 
 
+RC QL_Manager::checkRelAttr(const RelAttr relAttr, AttrCatEntry *&attrEntry, int &index){
+    RC rc = 0;
+    string selAttrName(relAttr.attrName);
+    if (attrToRel[selAttrName].size() == 0){
+        return QL_ATTRTORELERROR;
+    }
+    else{
+        if (relAttr.relName == NULL){
+            //find the default relation
+            if (attrToRel[selAttrName].size() > 1) 
+                return QL_ATTRNAMECONFLICT;
+            int tempIndex = relToIndex[*(attrToRel[selAttrName].begin())];
+            if (tempIndex == 0){
+                cout<<"1"<<endl;
+                attrEntry = attrEntries;
+                index = attrToIndex[selAttrName];
+            }
+            else{
+                cout<<"2"<<endl;
+                attrEntry = attrEntries2;
+                index = attrToIndex2[selAttrName];
+            }
+        }
+        else{
+            string relNameString(relAttr.relName);
+            set<string>::iterator exist = attrToRel[selAttrName].find(relNameString);
+            if(exist == attrToRel[selAttrName].end()){
+                return QL_ATTRNAMENOTFOUND;
+            }
+            else{
+                int tempIndex = relToIndex[*(exist)];
+                if (tempIndex == 0){
+                    cout<<"TempI="<<tempIndex<<endl;
+                    attrEntry = attrEntries;
+                    index = attrToIndex[selAttrName];
+                }
+                else{
+                    cout<<"TempI="<<tempIndex<<endl;
+                    attrEntry = attrEntries2;
+                    index = attrToIndex2[selAttrName];
+                }
+            }
+        }
+    }
+    return rc;
+}
 
