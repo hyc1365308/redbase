@@ -54,6 +54,7 @@ RC QL_Manager::Insert  (const char *relName,    // relation to insert into
 
     //prepare the insert record
     tempRecord = (char *)malloc(relEntries->tupleLength);
+    memset(tempRecord, 0, relEntries->tupleLength);
     cout<<"tupleLength="<<relEntries->tupleLength<<endl;
     int offset = 0;
     for (int i = 0; i < nValues; i++){
@@ -72,7 +73,7 @@ RC QL_Manager::Insert  (const char *relName,    // relation to insert into
         return (rc);
     }
     cout<<"RID: PageNum = "<<rid.Page()<<" SlotNum = "<<rid.Slot()<<endl;
-    //free(tempRecord);
+    free(tempRecord);
 
     return rc;
 }           
@@ -180,6 +181,19 @@ RC QL_Manager::Delete  (const char *relName,    // relation to delete from
         tempNode->nextNode = NULL;
         tempNode->print();
     }
+    free(types);
+
+    DataAttrInfo *dataAttrs = (DataAttrInfo*)malloc(4*sizeof(DataAttrInfo));
+    for(int i = 0; i < relEntries->attrCount; i++){
+        memcpy(dataAttrs[i].relName,  (attrEntries + i)->relName , MAXNAME+1);
+        memcpy(dataAttrs[i].attrName, (attrEntries + i)->attrName, MAXNAME+1);
+        dataAttrs[i].attrType = (attrEntries + i)->attrType;
+        dataAttrs[i].attrLength = (attrEntries + i)->attrLength;
+        dataAttrs[i].offset  = (attrEntries + i)->offset;
+        dataAttrs[i].indexNo = 0;
+    }
+    Printer printer(dataAttrs, relEntries->attrCount);
+    printer.PrintHeader(cout);
 
     RM_FileHandle fh;
     RM_FileScan   fs;
@@ -189,21 +203,36 @@ RC QL_Manager::Delete  (const char *relName,    // relation to delete from
 
     RM_Record rec;
     char * recData;
+
     while((rc = fs.GetNextRec(rec)) == 0){
-        tempNode = firstNode;
+        bool compare = true;
+        if ((rc = rec.GetData(recData)))
+            return rc;
+
         while(tempNode != NULL){
-            if ((rc = rec.GetData(recData)))
-                return rc;
-            if (!tempNode->compare(recData))
+            if (!tempNode->compare(recData)){
+                compare = false;
                 break;
+            }
             tempNode = tempNode->nextNode;
         }
-        printf("success\n");
+        if (!compare) continue;
+        tempNode = firstNode;
+        printer.Print(cout, recData);
+        RID rid;
+        if ((rc = rec.GetRid(rid)) ||
+            (rc = fh.DeleteRec(rid)))
+            return rc;
     }
+
+    printer.PrintFooter(cout);
     if (rc != RM_EOF)
         return rc;
-    
+
     rc = 0;
+
+    if ((rc = fh.ForcePages()))
+        return rc;
 
     return rc;
 }   

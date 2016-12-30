@@ -74,8 +74,8 @@ public:
     RC setParams(int attrOffset1, int attrLength1, int attrIndex1, int recLength1,
                  int attrOffset2, int attrLength2);
 
-    bool compare(char *record);
-    bool compare(char *record1, char* record2);
+    bool compare(const char *record);
+    bool compare(const char *record1,const char* record2);
 
     void print();
 

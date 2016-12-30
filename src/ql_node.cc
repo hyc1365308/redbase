@@ -70,7 +70,7 @@ RC QL_NODE::setParams(int attrOffset1, int attrLength1, int attrIndex1, int recL
     return rc;
 }
 
-bool QL_NODE::compare(char *record){
+bool QL_NODE::compare(const char *record){
     if (compareToNull == 1){ // == NULL
         return true;
     }
@@ -91,7 +91,7 @@ bool QL_NODE::compare(char *record){
     else return QL_NODEERROR;
 }
 
-bool QL_NODE::compare(char *record1, char *record2){
+bool QL_NODE::compare(const char *record1,const char *record2){
     if (compareToNull == 1){ // == NULL
         return true;
     }
