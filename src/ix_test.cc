@@ -302,8 +302,8 @@ RC Test2(void){
         return (rc);
 
     int data[10] = {45,90,80,70,50,61,48,29,64,98};
-    int pageN[10] = {1,2,3,4,5,6,7,8,9,10};
-    int slotN[10] = {0,1,2,3,4,5,6,7,8,9};
+    int pageN[10] = {1, 2, 3, 4, 5, 6, 7, 8, 9,10};
+    int slotN[10] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
     RID rid;
     for (int i = 0; i < 10; i++){
         rid = RID(pageN[i], slotN[i]);
@@ -319,7 +319,7 @@ RC Test2(void){
         if ((rc = ixs.GetNextEntry(rid)))
             return (rc);
         printf("rid : PageNum = %d, SlotNum = %d.\n", rid.Page(), rid.Slot());
-        if (rid.Slot() == -1) break;
+        //if (rid.Slot() == -1) break;
     }
 
     if ((rc = DestroyIndex(FILENAME, 2)))

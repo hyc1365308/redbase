@@ -1,62 +1,12 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include "pf.h"
+#include "comparators2.h"
 #include "ix_internal.h"
 #include <cstdio>
+#include <iostream>
 
-bool iequal(void * value1, void * value2, AttrType attrtype, int attrLength){
-  switch(attrtype){
-    case FLOAT: return (*(float *)value1 == *(float*)value2);
-    case INT: return (*(int *)value1 == *(int *)value2) ;
-    default:
-      return (strncmp((char *) value1, (char *) value2, attrLength) == 0); 
-  }
-}
-
-bool iless_than(void * value1, void * value2, AttrType attrtype, int attrLength){
-  switch(attrtype){
-    case FLOAT: return (*(float *)value1 < *(float*)value2);
-    case INT: return (*(int *)value1 < *(int *)value2) ;
-    default: 
-      return (strncmp((char *) value1, (char *) value2, attrLength) < 0);
-  }
-}
-
-bool igreater_than(void * value1, void * value2, AttrType attrtype, int attrLength){
-  switch(attrtype){
-    case FLOAT: return (*(float *)value1 > *(float*)value2);
-    case INT: return (*(int *)value1 > *(int *)value2) ;
-    default: 
-      return (strncmp((char *) value1, (char *) value2, attrLength) > 0);
-  }
-}
-
-bool iless_than_or_eq_to(void * value1, void * value2, AttrType attrtype, int attrLength){
-  switch(attrtype){
-    case FLOAT: return (*(float *)value1 <= *(float*)value2);
-    case INT: return (*(int *)value1 <= *(int *)value2) ;
-    default: 
-      return (strncmp((char *) value1, (char *) value2, attrLength) <= 0);
-  }
-}
-
-bool igreater_than_or_eq_to(void * value1, void * value2, AttrType attrtype, int attrLength){
-  switch(attrtype){
-    case FLOAT: return (*(float *)value1 >= *(float*)value2);
-    case INT: return (*(int *)value1 >= *(int *)value2) ;
-    default: 
-      return (strncmp((char *) value1, (char *) value2, attrLength) >= 0);
-  }
-}
-
-bool inot_equal(void * value1, void * value2, AttrType attrtype, int attrLength){
-  switch(attrtype){
-    case FLOAT: return (*(float *)value1 != *(float*)value2);
-    case INT: return (*(int *)value1 != *(int *)value2) ;
-    default: 
-      return (strncmp((char *) value1, (char *) value2, attrLength) != 0);
-  }
-}
+using namespace std;
 
 IX_IndexScan::IX_IndexScan(){
   openScan = false;  
@@ -103,20 +53,21 @@ RC IX_IndexScan::OpenScan (const IX_IndexHandle &indexHandle, CompOp compOp, voi
 	this -> compOp = compOp;
 	switch(compOp){
 		case EQ_OP :
-			comparator = &iequal;
+			comparator = &equal;
 			useFirstLeaf = false;
 			break;
 		case LT_OP :
-			comparator = &iless_than;
+			comparator = &less_than;
 			break;
 		case GT_OP :
-			comparator = &igreater_than;
+			comparator = &greater_than;
 			useFirstLeaf = false;
+			break;
 		case LE_OP :
-			comparator = &iless_than_or_eq_to;
+			comparator = &less_than_or_eq_to;
 			break;
 		case GE_OP :
-			comparator = &igreater_than_or_eq_to;
+			comparator = &greater_than_or_eq_to;
 			useFirstLeaf = false;
 			break;
 		case NO_OP :
