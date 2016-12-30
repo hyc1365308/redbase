@@ -69,23 +69,42 @@ RC QL_Manager::SelectOne  (int nSelAttrs,          // # attrs in select clause
         attrToType[attrString] = (attrEntries + i)->attrType;
     }
 
-    //check selectattrs
-    DataAttrInfo *dataAttrs = (DataAttrInfo*)malloc(nSelAttrs*sizeof(DataAttrInfo));
-    for(int i = 0; i < nSelAttrs; i++){
-        string selAttrName(selAttrs[i].attrName);
-        map<string, int>::iterator exist = attrToIndex.find(selAttrName);
-        if(exist == attrToIndex.end())
-            return QL_ATTRNAMENOTFOUND;
-        int selAttrIndex = attrToIndex[selAttrName];
-        memcpy(dataAttrs[i].relName,  selAttrs[i].relName , MAXNAME+1);
-        memcpy(dataAttrs[i].attrName, selAttrs[i].attrName, MAXNAME+1);
-        dataAttrs[i].attrType = (attrEntries + selAttrIndex)->attrType;
-        dataAttrs[i].attrLength = (attrEntries + selAttrIndex)->attrLength;
-        dataAttrs[i].offset  = (attrEntries + selAttrIndex)->offset;
-        dataAttrs[i].indexNo = (attrEntries + selAttrIndex)->indexNo;
+    bool isSelectAll = false;
+    if(nSelAttrs == 1){
+        if(strncmp("*", selAttrs[0].attrName, 2) == 0){
+            isSelectAll = true;
+        }
     }
-
-    Printer printer(dataAttrs, nSelAttrs);
+    //check selectattrs
+    DataAttrInfo *dataAttrs = (DataAttrInfo*)malloc((relEntries->attrCount)*sizeof(DataAttrInfo));
+    int printerInit = 0;
+    if(isSelectAll){
+        for(int i = 0; i < relEntries->attrCount; i++){
+            memcpy(dataAttrs[i].relName,  (attrEntries + i)->relName , MAXNAME+1);
+            memcpy(dataAttrs[i].attrName, (attrEntries + i)->attrName, MAXNAME+1);
+            dataAttrs[i].attrType = (attrEntries + i)->attrType;
+            dataAttrs[i].attrLength = (attrEntries + i)->attrLength;
+            dataAttrs[i].offset  = (attrEntries + i)->offset;
+            dataAttrs[i].indexNo = (attrEntries + i)->indexNo;
+        }
+        printerInit = relEntries -> attrCount;
+    }else{
+        for(int i = 0; i < nSelAttrs; i++){
+            string selAttrName(selAttrs[i].attrName);
+            map<string, int>::iterator exist = attrToIndex.find(selAttrName);
+            if(exist == attrToIndex.end())
+                return QL_ATTRNAMENOTFOUND;
+            int selAttrIndex = attrToIndex[selAttrName];
+            memcpy(dataAttrs[i].relName,   (attrEntries + selAttrIndex)->relName, MAXNAME+1);
+            memcpy(dataAttrs[i].attrName, (attrEntries + selAttrIndex)->attrType, MAXNAME+1);
+            dataAttrs[i].attrType = (attrEntries + selAttrIndex)->attrType;
+            dataAttrs[i].attrLength = (attrEntries + selAttrIndex)->attrLength;
+            dataAttrs[i].offset  = (attrEntries + selAttrIndex)->offset;
+            dataAttrs[i].indexNo = (attrEntries + selAttrIndex)->indexNo;
+        }
+        printerInit = nSelAttrs;
+    }
+    Printer printer(dataAttrs, printerInit);
 
     //check conditions,set types
     types = (AttrType *)malloc(sizeof(AttrType) * (nConditions));
