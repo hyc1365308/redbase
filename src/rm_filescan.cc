@@ -12,7 +12,8 @@ RM_FileScan::RM_FileScan(){
 }
 
 RM_FileScan::~RM_FileScan(){
-	free(this->value);
+	if (this->value != NULL)
+		free(this->value);
 }
 
 

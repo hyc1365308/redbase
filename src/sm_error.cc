@@ -14,16 +14,15 @@ using namespace std;
 // Error table
 //
 static char *SM_WarnMsg[] = {
-  (char*)"cannot close db"
-};
-
-static char *SM_ErrorMsg[] = {
   (char*)"Invalid database",
   (char*)"Invalid relation name",
   (char*)"Invalid relation",
   (char*)"Invalid attr",
   (char*)"Already indexed",
   (char*)"No Index"
+};
+
+static char *SM_ErrorMsg[] = {
 };
 
 //

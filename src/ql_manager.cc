@@ -2,6 +2,8 @@
 #include <stdio.h>
 #include "ql.h"
 
+using namespace std;
+
 QL_Manager::QL_Manager (SM_Manager &smm, IX_Manager &ixm, RM_Manager &rmm) : smm(smm), ixm(ixm), rmm(rmm){
     printf("Consturctor of ql\n");
 }
@@ -28,6 +30,49 @@ RC QL_Manager::Insert  (const char *relName,    // relation to insert into
     RC rc = 0;
     printf("QL_INSERT relName = %s, nValue = %d\n", relName, nValues);
 
+    RM_Record unusedRec;
+    if ((rc = smm.GetRelEntry(relName, unusedRec, relEntries))){
+        return (rc);
+    }
+    if ((nValues != relEntries->attrCount)){
+        return QL_WRONGVALUENUMBER;
+    }
+
+    attrEntries = (AttrCatEntry *)malloc(sizeof(AttrCatEntry) * nValues);
+    if ((rc = smm.GetAttrForRel(relEntries, attrEntries, attrToRel))){
+        free(attrEntries);
+        return (rc);
+    }
+
+    //check value type
+    for (int i = 0; i < nValues; i++){
+        if (values[i].type != (attrEntries + i)->attrType){
+            free(attrEntries);
+            return QL_WRONGTYPE;
+        }
+    }
+
+    //prepare the insert record
+    tempRecord = (char *)malloc(relEntries->tupleLength);
+    cout<<"tupleLength="<<relEntries->tupleLength<<endl;
+    int offset = 0;
+    for (int i = 0; i < nValues; i++){
+        cout<<offset<<' '<<attrEntries[i].attrLength<<endl;
+        memcpy(tempRecord + offset, values[i].data, attrEntries[i].attrLength);
+        offset += attrEntries[i].attrLength;
+    }
+    free(attrEntries);
+
+    RID rid;
+    RM_FileHandle fh;
+    if ((rc = rmm.OpenFile(relName, fh)) ||
+        (rc = fh.InsertRec(tempRecord, rid)) ||
+        (rc = fh.ForcePages())){
+        free(tempRecord);
+        return (rc);
+    }
+    cout<<"RID: PageNum = "<<rid.Page()<<" SlotNum = "<<rid.Slot()<<endl;
+    //free(tempRecord);
 
     return rc;
 }           
@@ -37,6 +82,129 @@ RC QL_Manager::Delete  (const char *relName,    // relation to delete from
         const Condition conditions[]) {         // conditions in where clause
     RC rc = 0;
     printf("QL_DELETE relName = %s, nConditions = %d\n", relName, nConditions);
+
+    cout << "   relName = " << relName << "\n";
+    cout << "   nCondtions = " << nConditions << "\n";
+    for (int i = 0; i < nConditions; i++)
+        cout << "   conditions[" << i << "]:" << conditions[i] << "\n";
+
+    //set relEntries and attrEntries
+    RM_Record unusedRec;
+    if ((rc = smm.GetRelEntry(relName, unusedRec, relEntries))){
+        return (rc);
+    }
+
+    attrEntries = (AttrCatEntry *)malloc(sizeof(AttrCatEntry) * (relEntries->attrCount));
+    if ((rc = smm.GetAttrForRel(relEntries, attrEntries, attrToRel))){
+        free(attrEntries);
+        return (rc);
+    }
+
+    //set attrToIndex, attrToType
+    attrToIndex.clear();
+    for (int i = 0; i < relEntries->attrCount; i++){
+        string attrString((attrEntries + i)->attrName);
+        attrToIndex[attrString] = i;
+        attrToType[attrString] = (attrEntries + i)->attrType;
+    }
+
+    //check conditions,set types
+    types = (AttrType *)malloc(sizeof(AttrType) * (relEntries->attrCount));
+    for (int i = 0; i < nConditions; i++) {
+        string lhsName(conditions[i].lhsAttr.attrName);
+        map<string, int>::iterator exist = attrToIndex.find(lhsName);
+        if (exist == attrToIndex.end())
+            return QL_ATTRNAMENOTFOUND;
+        memcpy(types + i, &(attrToType[lhsName]), sizeof(AttrType));
+        if (conditions[i].bRhsIsAttr){
+            string rhsName(conditions[i].rhsAttr.attrName);
+            exist = attrToIndex.find(rhsName);
+            if (exist == attrToIndex.end())
+                return QL_ATTRNAMENOTFOUND;
+            if (attrToType[lhsName] != attrToType[rhsName])
+                return QL_WRONGTYPE;
+        }
+        else{
+            if (conditions[i].rhsValue.data == NULL) continue;//comp to NULL
+            if (attrToType[lhsName] != conditions[i].rhsValue.type){
+                return QL_WRONGTYPE;
+            }
+        }
+    }
+
+    //build nodes
+    QL_NODE* firstNode;
+    if (nConditions == 0)
+        firstNode = NULL;
+    else{
+        firstNode = new QL_NODE(conditions[0], *(AttrType *)types);
+        string lhsName(conditions[0].lhsAttr.attrName);
+        int attrIndex1 = attrToIndex[lhsName];
+        AttrCatEntry entry1 = *(attrEntries + attrIndex1);
+        int attrOffset1 = entry1.offset;
+        int attrLength1 = entry1.attrLength;
+        int attrIndex   = entry1.attrNum;
+        int recLength   = relEntries->tupleLength;
+        if (conditions[0].bRhsIsAttr){
+            string rhsName(conditions[0].rhsAttr.attrName);
+            int attrIndex2 = attrToIndex[rhsName];
+            AttrCatEntry entry2 = *(attrEntries + attrIndex2);
+            int attrOffset2 = entry2.offset;
+            int attrLength2 = entry2.attrLength;
+            firstNode->setParams(attrOffset1, attrLength1, attrIndex, recLength, attrOffset2, attrLength2);
+        }
+        else firstNode->setParams(attrOffset1, attrLength1, attrIndex, recLength);
+        firstNode->nextNode = NULL;
+        firstNode->print();
+    }
+    QL_NODE* tempNode = firstNode;
+    for (int i = 1; i < nConditions; i++) {
+        tempNode->nextNode = new QL_NODE(conditions[i], *(AttrType *)(types + i));
+        tempNode = tempNode->nextNode;
+        string lhsName(conditions[0].lhsAttr.attrName);
+        int attrIndex1 = attrToIndex[lhsName];
+        AttrCatEntry entry1 = *(attrEntries + attrIndex1);
+        int attrOffset1 = entry1.offset;
+        int attrLength1 = entry1.attrLength;
+        int attrIndex   = entry1.attrNum;
+        int recLength   = relEntries->tupleLength;
+        if (conditions[i].bRhsIsAttr){
+            string rhsName(conditions[0].rhsAttr.attrName);
+            int attrIndex2 = attrToIndex[rhsName];
+            AttrCatEntry entry2 = *(attrEntries + attrIndex2);
+            int attrOffset2 = entry2.offset;
+            int attrLength2 = entry2.attrLength;
+            tempNode->setParams(attrOffset1, attrLength1, attrIndex, recLength, attrOffset2, attrLength2);
+        }
+        else tempNode->setParams(attrOffset1, attrLength1, attrIndex, recLength);
+        tempNode->nextNode = NULL;
+        tempNode->print();
+    }
+
+    RM_FileHandle fh;
+    RM_FileScan   fs;
+    if ((rc = rmm.OpenFile(relName, fh)) ||
+        (rc = fs.OpenScan(fh, INT, 4, 0, NO_OP, NULL)))
+        return rc;
+
+    RM_Record rec;
+    char * recData;
+    while((rc = fs.GetNextRec(rec)) == 0){
+        tempNode = firstNode;
+        while(tempNode != NULL){
+            if ((rc = rec.GetData(recData)))
+                return rc;
+            if (!tempNode->compare(recData))
+                break;
+            tempNode = tempNode->nextNode;
+        }
+        printf("success\n");
+    }
+    if (rc != RM_EOF)
+        return rc;
+    
+    rc = 0;
+
     return rc;
 }   
 

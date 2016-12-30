@@ -53,13 +53,31 @@ private:
     IX_Manager &ixm;
     RM_Manager &rmm;
 
+    //map from each AttrName to a set with Relname
+    std::map<std::string, std::set<std::string> > attrToRel;
+    std::map<std::string, int> attrToIndex;
+    std::map<std::string, AttrType> attrToType;
+
+    AttrType *types;
+    RelCatEntry *relEntries;
+    AttrCatEntry *attrEntries;
+
+    char *tempRecord;
+
 };
 
 class QL_NODE {
 public:
-    QL_NODE(const Condition condition);
+    QL_NODE(const Condition condition, AttrType attrType);
 
-    RC BuildNode();
+    RC setParams(int attrOffset, int attrLength, int attrIndex, int recLength);
+    RC setParams(int attrOffset1, int attrLength1, int attrIndex1, int recLength1,
+                 int attrOffset2, int attrLength2);
+
+    bool compare(char *record);
+    bool compare(char *record1, char* record2);
+
+    void print();
 
     QL_NODE *nextNode;
 
@@ -69,6 +87,23 @@ private:
     int      bRhsIsAttr;
     RelAttr  rhsAttr;
     Value    rhsValue;
+
+    int compareType;  //   0:not inited
+                      //   1:for one record 
+                      //   2:for two record
+    int compareToNull;//  -1:error 
+                      //   0:not compare to null 
+                      //   1:judge if equal to Null 
+                      //   2:judge if not equal to Null
+
+    AttrType attrType;
+
+    int attrOffset1 , attrOffset2 ;
+    int attrLength1 , attrLength2 ;
+    int attrIndex1  ;
+    int recLength1  ;
+
+    bool (*comparator)(void * value1, void * value2, AttrType attrtype, int attrLength);
 };
 
 class QL_RecordFilter {
@@ -87,12 +122,18 @@ private:
 //
 void QL_PrintError(RC rc);
 
-#define QL_BADINSERT            (START_QL_WARN + 0) 
-#define QL_LASTWARN             QL_BADINSERT
+#define QL_WRONGVALUENUMBER     (START_QL_WARN + 0)  //wrong value number
+#define QL_WRONGTYPE            (START_QL_WARN + 1)  //wrong type in input record
+#define QL_ATTRNAMENOTFOUND     (START_QL_WARN + 2)  //attribute name not found
+#define QL_LASTWARN             QL_ATTRNAMENOTFOUND
 
-#define QL_INVALIDDB            (START_QL_ERR - 0)
-#define QL_LASTERROR            QL_INVALIDDB
-
-
+#define QL_NODEBUILDERROR       (START_QL_ERR - 0)   //error in build QL_NODES
+#define QL_NODEINITED           (START_QL_ERR - 1)   //QL_NODE already inited
+#define QL_NODENOTINITED        (START_QL_ERR - 2)   //QL_NODE not inited
+#define QL_INVALIDCOMPOP        (START_QL_ERR - 3)   //invalid compOp
+#define QL_INVALIDCONDITIONS    (START_QL_ERR - 4)   //invalid conditions
+#define QL_NODEFUNCSELECTERROR  (START_QL_ERR - 5)   //select wrong compare function in QL_NODE
+#define QL_NODEERROR            (START_QL_ERR - 6)   //QL_NODE error
+#define QL_LASTERROR            QL_NODEERROR
 
 #endif
