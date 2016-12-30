@@ -110,7 +110,7 @@ RC QL_Manager::Delete  (const char *relName,    // relation to delete from
     }
 
     //check conditions,set types
-    types = (AttrType *)malloc(sizeof(AttrType) * (relEntries->attrCount));
+    types = (AttrType *)malloc(sizeof(AttrType) * (nConditions));
     for (int i = 0; i < nConditions; i++) {
         string lhsName(conditions[i].lhsAttr.attrName);
         map<string, int>::iterator exist = attrToIndex.find(lhsName);
@@ -183,14 +183,14 @@ RC QL_Manager::Delete  (const char *relName,    // relation to delete from
     }
     free(types);
 
-    DataAttrInfo *dataAttrs = (DataAttrInfo*)malloc(4*sizeof(DataAttrInfo));
+    DataAttrInfo *dataAttrs = (DataAttrInfo*)malloc((relEntries->attrCount)*sizeof(DataAttrInfo));
     for(int i = 0; i < relEntries->attrCount; i++){
         memcpy(dataAttrs[i].relName,  (attrEntries + i)->relName , MAXNAME+1);
         memcpy(dataAttrs[i].attrName, (attrEntries + i)->attrName, MAXNAME+1);
         dataAttrs[i].attrType = (attrEntries + i)->attrType;
         dataAttrs[i].attrLength = (attrEntries + i)->attrLength;
         dataAttrs[i].offset  = (attrEntries + i)->offset;
-        dataAttrs[i].indexNo = 0;
+        dataAttrs[i].indexNo = (attrEntries + i)->indexNo;
     }
     Printer printer(dataAttrs, relEntries->attrCount);
     printer.PrintHeader(cout);
@@ -209,6 +209,7 @@ RC QL_Manager::Delete  (const char *relName,    // relation to delete from
         if ((rc = rec.GetData(recData)))
             return rc;
 
+        tempNode = firstNode;
         while(tempNode != NULL){
             if (!tempNode->compare(recData)){
                 compare = false;
@@ -217,7 +218,6 @@ RC QL_Manager::Delete  (const char *relName,    // relation to delete from
             tempNode = tempNode->nextNode;
         }
         if (!compare) continue;
-        tempNode = firstNode;
         printer.Print(cout, recData);
         RID rid;
         if ((rc = rec.GetRid(rid)) ||
