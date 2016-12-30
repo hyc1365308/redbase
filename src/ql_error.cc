@@ -16,7 +16,8 @@ using namespace std;
 static char *QL_WarnMsg[] = {
   (char*)"wrong value number",
   (char*)"wrong type in input record",
-  (char*)"attribute name not found"
+  (char*)"attribute name not found",
+  (char*)"insert null into notNull"
 };
 
 static char *QL_ErrorMsg[] = {

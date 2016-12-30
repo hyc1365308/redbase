@@ -350,8 +350,10 @@ RC RM_FileHandle::GetNextRecord(PageNum &currentPage, SlotNum &currentSlot, RM_R
     //find the next slot in this page
     //if fail, goto the next page
     //if the currentPage = maxPageNum return RM_EOF
-    if (currentPage == maxPageNum)
-      return RM_EOF;
+
+    //if (currentPage == maxPageNum)
+      //return RM_EOF;
+
     //First read the page
     PF_PageHandle ph;
     char *pData;
@@ -366,8 +368,16 @@ RC RM_FileHandle::GetNextRecord(PageNum &currentPage, SlotNum &currentSlot, RM_R
     if ( (rc = GetNextOneBit(bitmap, header->numRecordsPerPage, 
             currentSlot, nextRecord)) ){
       //cannot find record in this page
-      currentPage ++;
+      if((rc = pf_fh->UnpinPage(currentPage))){
+        return (rc);
+      }
+      if((PF_EOF == pf_fh->GetNextPage(currentPage, ph))){
+        return(RM_EOF);
+      }
       currentSlot = -1;
+      if((rc = ph.GetPageNum(currentPage))){
+        return (rc);
+      }
       continue;
     }
 
