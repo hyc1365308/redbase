@@ -266,13 +266,29 @@ RC interp(NODE *n)
                print_error((char*)"create", E_TOOLONG);
                break;
             }
-            errval = pSmm->CreateDb(n->u.DATABASE.dbname);
+            char * command= (char *)malloc(MAXNAME + 25);
+            memcpy(command, "./CREATE CREATEDATABASE ", 24);
+            memcpy(command + 24, n -> u.DATABASE.dbname, strlen(n -> u.DATABASE.dbname));
+            system(command);
+            free(command);
+            errval = 0;
             break;
          }
 
       case N_DROPDATABASE:
-         errval = pSmm->DropDb(n->u.DATABASE.dbname);
-         break;
+         {
+            if(strlen(n -> u.DATABASE.dbname) > MAXNAME){
+               print_error((char*)"drop", E_TOOLONG);
+               break;
+            }
+            char * command= (char *)malloc(MAXNAME + 25);
+            memcpy(command, "./DROP DATABASE ", 16);
+            memcpy(command + 16, n -> u.DATABASE.dbname, strlen(n -> u.DATABASE.dbname));
+            system(command);
+            free(command);
+            errval = 0;
+            break;
+         }
 
       case N_USEDATABASE:
          {

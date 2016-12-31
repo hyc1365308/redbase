@@ -20,6 +20,7 @@
 #include <iostream>
 #include <sys/types.h>
 #include <cstdlib>
+#include <dirent.h>
 #include <unistd.h>
 #include "redbase.h"
 #include "parser_internal.h"
@@ -368,7 +369,16 @@ usedatabase
 showdatabases
    : RW_SHOW RW_DATABASES
    {
-      printf("Show databases\n");
+      DIR    *dir;
+      struct  dirent *ptr;
+      dir = opendir("."); ///open the dir
+
+      while((ptr = readdir(dir)) != NULL) ///read the list of this dir
+      {
+         if (ptr -> d_type == 4 && strcmp(ptr->d_name, ".") && strcmp(ptr -> d_name, ".."))
+            printf("database_name: %s\n", ptr->d_name);
+      }
+      closedir(dir);
       $$ = NULL;
    }
    ;
@@ -385,11 +395,11 @@ showtables
    ;
 
 desctable
-   : RW_DESC RW_TABLE T_STRING
+   : RW_DESC T_STRING
    {
       printf("desc table\n");
       RC rc;
-      if((rc = pSmm->ShowTable($3)))
+      if((rc = pSmm->ShowTable($2)))
          PrintError(rc);
       $$ = NULL;
    }

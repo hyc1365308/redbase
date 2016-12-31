@@ -62,12 +62,6 @@ SM_Manager::~SM_Manager   () {
     printf("Destructor of sm\n");
 }
 
-RC SM_Manager::CreateDb   (const char *dbName) {
-    RC rc = 0;
-    printf("SM_CREATEDB dbName = %s\n", dbName);
-    return rc;
-}
-
 RC SM_Manager::OpenDb     (const char *dbName) {
     RC rc = 0;
     printf("SM_OPENDB dbName = %s", dbName);
@@ -100,12 +94,6 @@ RC SM_Manager::CloseDb    () {
     if((rc = rmm.CloseFile(attrcatFH))){
         return rc;
     }
-    return rc;
-}
-
-RC SM_Manager::DropDb   (const char *dbName) {
-    RC rc = 0;
-    printf("SM_DROPDB dbName = %s\n", dbName);
     return rc;
 }
 
@@ -142,7 +130,7 @@ RC SM_Manager::CreateTable(const char *relName,   // create relation relName
             totalRecSize += attributes[i].attrLength;
             relAttrbutes.insert(attrString);
         }
-        if(attrbutes[i].isPrimaryKey == 1){
+        if(attributes[i].isPrimaryKey == 1){
             primaryKeyIndex = i;
         }
     }
@@ -170,7 +158,7 @@ RC SM_Manager::CreateTable(const char *relName,   // create relation relName
         return rc;
     }
     
-    if((rc = CreateIndex(relName, attrbutes[primaryKeyIndex].attrName))){
+    if((rc = CreateIndex(relName, attributes[primaryKeyIndex].attrName))){
         return (rc);
     }
     
