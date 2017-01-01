@@ -22,7 +22,8 @@ static char *QL_WarnMsg[] = {
   (char*)"Invalid Relation",
   (char*)"Primary Key Inserted",
   (char*)"conflict occur in attrName",
-  (char*)"left attribute must belong to the left table"
+  (char*)"left attribute must belong to the left table".
+  (char*)"No condition can use index"
 };
 
 static char *QL_ErrorMsg[] = {

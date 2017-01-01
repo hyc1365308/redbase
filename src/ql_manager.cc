@@ -649,53 +649,72 @@ RC QL_Manager::Delete  (const char *relName,    // relation to delete from
         }
     }
 
-    //build nodes
-    QL_NODE* firstNode;
-    if (nConditions == 0)
-        firstNode = NULL;
-    else{
-        firstNode = new QL_NODE(conditions[0], *(AttrType *)types);
-        string lhsName(conditions[0].lhsAttr.attrName);
-        int attrIndex1 = attrToIndex[lhsName];
-        AttrCatEntry entry1 = *(attrEntries + attrIndex1);
-        int attrOffset1 = entry1.offset;
-        int attrLength1 = entry1.attrLength;
-        int attrIndex   = entry1.attrNum;
-        int recLength   = relEntries->tupleLength;
-        if (conditions[0].bRhsIsAttr){
-            string rhsName(conditions[0].rhsAttr.attrName);
-            int attrIndex2 = attrToIndex[rhsName];
-            AttrCatEntry entry2 = *(attrEntries + attrIndex2);
-            int attrOffset2 = entry2.offset;
-            int attrLength2 = entry2.attrLength;
-            firstNode->setParams(attrOffset1, attrLength1, attrIndex, recLength, attrOffset2, attrLength2);
+    bool useIX = false;
+    int useIXIndex = -1; 
+    for(int i =0; i < nConditions; i++){
+        if(conditions[i].bRhsIsAttr == 0){
+            string lhsName(conditions[i].lhsAttr.attrName);
+            int attrIndex = attrToIndex[lhsName];
+            if(attrEntries[attrIndex].indexNo !=  NO_INDEXES){
+                useIX = true;
+                useIXIndex = i;
+                break;
+            }
         }
-        else firstNode->setParams(attrOffset1, attrLength1, attrIndex, recLength);
-        firstNode->nextNode = NULL;
-        firstNode->print();
     }
+
+    if(!useIX){
+        return (QL_NOINDEXTOUSE);
+    }
+    //build nodes
+    QL_NODE* firstNode;//修改了，firstnode只作为链表头，没有实际作用
+    //if (nConditions == 0)
+    //    firstNode = NULL;
+    //else{
+    firstNode = new QL_NODE(conditions[0], *(AttrType *)types);
+    firstNode->nextNode = NULL;
+    /*string lhsName(conditions[0].lhsAttr.attrName);
+    int attrIndex1 = attrToIndex[lhsName];
+    AttrCatEntry entry1 = *(attrEntries + attrIndex1);
+    int attrOffset1 = entry1.offset;
+    int attrLength1 = entry1.attrLength;
+    int attrIndex   = entry1.attrNum;
+    int recLength   = relEntries->tupleLength;
+    if (conditions[0].bRhsIsAttr){
+        string rhsName(conditions[0].rhsAttr.attrName);
+        int attrIndex2 = attrToIndex[rhsName];
+        AttrCatEntry entry2 = *(attrEntries + attrIndex2);
+        int attrOffset2 = entry2.offset;
+        int attrLength2 = entry2.attrLength;
+        firstNode->setParams(attrOffset1, attrLength1, attrIndex, recLength, attrOffset2, attrLength2);
+    }
+    else firstNode->setParams(attrOffset1, attrLength1, attrIndex, recLength);
+    firstNode->print();*/
+    //}
     QL_NODE* tempNode = firstNode;
-    for (int i = 1; i < nConditions; i++) {
-        tempNode->nextNode = new QL_NODE(conditions[i], *(AttrType *)(types + i));
-        tempNode = tempNode->nextNode;
-        string lhsName(conditions[i].lhsAttr.attrName);
-        int attrIndex1 = attrToIndex[lhsName];
-        AttrCatEntry entry1 = *(attrEntries + attrIndex1);
-        int attrOffset1 = entry1.offset;
-        int attrLength1 = entry1.attrLength;
-        int attrIndex   = entry1.attrNum;
-        int recLength   = relEntries->tupleLength;
-        if (conditions[i].bRhsIsAttr){
-            string rhsName(conditions[i].rhsAttr.attrName);
-            int attrIndex2 = attrToIndex[rhsName];
-            AttrCatEntry entry2 = *(attrEntries + attrIndex2);
-            int attrOffset2 = entry2.offset;
-            int attrLength2 = entry2.attrLength;
-            tempNode->setParams(attrOffset1, attrLength1, attrIndex, recLength, attrOffset2, attrLength2);
+    for (int i = 0; i < nConditions; i++) {//修改了
+        if(useIX == true && useIXIndex != i){
+            tempNode->nextNode = new QL_NODE(conditions[i], *(AttrType *)(types + i));
+            tempNode = tempNode->nextNode;
+            string lhsName(conditions[i].lhsAttr.attrName);
+            int attrIndex1 = attrToIndex[lhsName];
+            AttrCatEntry entry1 = *(attrEntries + attrIndex1);
+            int attrOffset1 = entry1.offset;
+            int attrLength1 = entry1.attrLength;
+            int attrIndex   = entry1.attrNum;
+            int recLength   = relEntries->tupleLength;
+            if (conditions[i].bRhsIsAttr){
+                string rhsName(conditions[i].rhsAttr.attrName);
+                int attrIndex2 = attrToIndex[rhsName];
+                AttrCatEntry entry2 = *(attrEntries + attrIndex2);
+                int attrOffset2 = entry2.offset;
+                int attrLength2 = entry2.attrLength;
+                tempNode->setParams(attrOffset1, attrLength1, attrIndex, recLength, attrOffset2, attrLength2);
+            }
+            else tempNode->setParams(attrOffset1, attrLength1, attrIndex, recLength);
+            tempNode->nextNode = NULL;
+            tempNode->print();
         }
-        else tempNode->setParams(attrOffset1, attrLength1, attrIndex, recLength);
-        tempNode->nextNode = NULL;
-        tempNode->print();
     }
     free(types);
 
@@ -717,15 +736,24 @@ RC QL_Manager::Delete  (const char *relName,    // relation to delete from
         (rc = fs.OpenScan(fh, INT, 4, 0, NO_OP, NULL)))
         return rc;
 
+    IX_IndexHandle ix_IH;
+    IX_IndexScan ix_IS;
+    if((rc = ixm.OpenIndex(relName, attrEntries[useIXIndex].indexNo, ix_IH)) ||
+       (rc = ix_IS.OpenScan(ix_IH, conditions[useIXIndex].op, conditions[useIXIndex].rhsValue.data))){
+        return (rc);
+    }
     RM_Record rec;
     char * recData;
-
-    while((rc = fs.GetNextRec(rec)) == 0){
+    RID ixRID;
+    while((rc = ix_IS.GetNextEntry(ixRID)) == 0){//修改考虑两种情况。
         bool compare = true;
+        if((rc = fh.GetRec(ixRID, rec))){
+            return (rc);
+        }
         if ((rc = rec.GetData(recData)))
             return rc;
 
-        tempNode = firstNode;
+        tempNode = firstNode -> nextNode;
         while(tempNode != NULL){
             if (!tempNode->compare(recData, NULL)){
                 compare = false;
@@ -733,7 +761,9 @@ RC QL_Manager::Delete  (const char *relName,    // relation to delete from
             }
             tempNode = tempNode->nextNode;
         }
-        if (!compare) continue;
+        if (!compare) {
+            continue;
+        }
         printer.Print(cout, recData);
         RID rid;
         if((rc = rec.GetRid(rid))){
@@ -757,6 +787,8 @@ RC QL_Manager::Delete  (const char *relName,    // relation to delete from
         }
         if ((rc = fh.DeleteRec(rid)))
             return rc;
+
+
     }
 
     printer.PrintFooter(cout);
