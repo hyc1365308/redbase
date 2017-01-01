@@ -298,8 +298,12 @@ RC IX_IndexScan::GetAppropriateEntryInLeaf(PF_PageHandle &leafPH){
 	leafKeys = (char*)leafHeader + (indexHandle->header).keysOffset_N;
 	int index = 0;
 	bool isDup = false;
+
 	if((rc = indexHandle -> FindInsertPos((struct IX_NodeHeader*)leafHeader, value, index, isDup))){
 		return (rc);
+	}
+	if(index == -2){
+		index = leafHeader->firstSlotIndex;
 	}
 	//加入特判
 	/*
@@ -345,7 +349,7 @@ RC IX_IndexScan::GetAppropriateEntryInLeaf(PF_PageHandle &leafPH){
 	}*/
 	//
 	leafSlot = index;
-
+	//printf("GetAppropriateEntryInLeaf %d %d\n",*(int*)value, leafSlot);
 	if((leafSlot != NO_MORE_SLOTS)){
 		nextNextKey = leafKeys + attrLength * leafSlot;
 	}else{
