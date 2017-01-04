@@ -603,6 +603,11 @@ RC QL_Manager::Insert  (const char *relName,    // relation to insert into
     int offset = 0;
     for (int i = 0; i < nValues; i++){
         cout<<offset<<' '<<attrEntries[i].attrLength<<endl;
+        if(values[i].type == STRING){
+            if (strlen((char *)values[i].data) > (attrEntries + i) -> attrLength)
+                return QL_STRINGTOOLONG;
+        }
+
         if(values[i].data == NULL){
             memcpy(tempRecord + offset, nullData, attrEntries[i].attrLength);
         }else{
@@ -978,6 +983,10 @@ RC QL_Manager::Update  (const char *relName,    // relation to update
             return QL_WRONGTYPE;
         }
     }else{
+        if(rhsValue.type == STRING){
+            if (strlen((char *)rhsValue.data) > (attrEntries + attrToIndex[updName]) -> attrLength)
+                return QL_STRINGTOOLONG;
+        }
         if(rhsValue.type != attrToType[updName])
             return QL_WRONGTYPE;
         if(rhsValue.data == NULL){

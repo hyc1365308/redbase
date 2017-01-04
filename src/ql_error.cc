@@ -23,7 +23,8 @@ static char *QL_WarnMsg[] = {
   (char*)"Primary Key Inserted",
   (char*)"conflict occur in attrName",
   (char*)"left attribute must belong to the left table",
-  (char*)"No condition can use index"
+  (char*)"No condition can use index",
+  (char*)"input string too long"
 };
 
 static char *QL_ErrorMsg[] = {

@@ -161,7 +161,8 @@ void QL_PrintError(RC rc);
 #define QL_ATTRNAMECONFLICT     (START_QL_WARN + 7)  //conflict occur in attrName
 #define QL_LEFTATTRERROR        (START_QL_WARN + 8)  //left attribute must belong to the left table
 #define QL_NOINDEXTOUSE         (START_QL_WARN + 9)
-#define QL_LASTWARN             QL_NOINDEXTOUSE
+#define QL_STRINGTOOLONG        (START_QL_WARN + 10)
+#define QL_LASTWARN             QL_STRINGTOOLONG
 
 
 #define QL_NODEBUILDERROR       (START_QL_ERR - 0)   //error in build QL_NODES
