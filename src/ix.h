@@ -168,9 +168,10 @@ private:
 //
 void IX_PrintError(RC rc);
 
-#define IX_INVALIDSCAN          (START_IX_WARN + 0)
+#define IX_INVALIDSCAN          (START_IX_WARN + 0) // invalic scan
 #define IX_EOF					(START_IX_WARN + 1) // end of file
-#define IX_INVALIDINDEX         (START_IX_WARN + 2)
+#define IX_INVALIDENTRY         (START_IX_WARN + 2) // the record to be insert not found
+#define IX_INVALIDINDEX         (START_IX_WARN + 3) // invalid index
 #define IX_LASTWARN				IX_INVALIDINDEX
 
 #define IX_NULLFILENAME   		(START_IX_ERR - 0) // null filename pointer
@@ -179,10 +180,9 @@ void IX_PrintError(RC rc);
 #define IX_INVALIDINDEXHANDLE	(START_IX_ERR - 3) // invalid indexHandle
 #define IX_INVALIDCOMPOP		(START_IX_ERR - 4) // invalid CompOp
 #define IX_INVALIDPINHINT		(START_IX_ERR - 5) // invalid pinHint
-#define IX_DUPLICATEENTRY		(START_IX_ERR - 6) // 插入了rid重复的记录
-#define IX_INVALIDENTRY			(START_IX_ERR - 7) // 没有找到要删除的记录
-#define IX_NULLVALUEPOINTER     (START_IX_ERR - 8) // null value pointer
-#define IX_SCANNOTOPENED		(START_IX_ERR - 9) // the scan not opened
+#define IX_DUPLICATEENTRY		(START_IX_ERR - 6) // insert record with repetitive RID
+#define IX_NULLVALUEPOINTER     (START_IX_ERR - 7) // null value pointer
+#define IX_SCANNOTOPENED		(START_IX_ERR - 8) // the scan not opened
 
 
 #define IX_LASTERROR			IX_SCANNOTOPENED

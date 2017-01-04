@@ -314,7 +314,7 @@ RC RM_FileHandle::DeleteRec (const RID &rid) {
     pageheader->nextFreePage = header->firstFreePage;
     header->firstFreePage = page;
     headerModified=true;
- }
+  }
 
   // always unpin the page before returning
   cleanup_and_exit:

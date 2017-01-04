@@ -211,7 +211,7 @@ RC QL_Manager::SelectOne  (int nSelAttrs,          // # attrs in select clause
             }
             else tempNode->setParams(attrOffset1, attrLength1, attrIndex, recLength);
             tempNode->nextNode = NULL;
-            tempNode->print();
+            //tempNode->print();
         }
     }
     free(types);
@@ -439,7 +439,7 @@ RC QL_Manager::SelectTwo  (int nSelAttrs,          // # attrs in select clause
         }
         else firstNode->setParams(attrOffset1, attrLength1, attrIndex, recLength);
         firstNode->nextNode = NULL;
-        firstNode->print();
+        //firstNode->print();
     }
     QL_NODE* tempNode = firstNode;
     for (int i = 1; i < nConditions; i++) {
@@ -474,7 +474,7 @@ RC QL_Manager::SelectTwo  (int nSelAttrs,          // # attrs in select clause
         }
         else tempNode->setParams(attrOffset1, attrLength1, attrIndex, recLength);
         tempNode->nextNode = NULL;
-        tempNode->print();
+        //tempNode->print();
     }
     free(types);
 
@@ -765,7 +765,7 @@ RC QL_Manager::Delete  (const char *relName,    // relation to delete from
             }
             else tempNode->setParams(attrOffset1, attrLength1, attrIndex, recLength);
             tempNode->nextNode = NULL;
-            tempNode->print();
+            //tempNode->print();
         }
     }
     free(types);
@@ -1012,7 +1012,7 @@ RC QL_Manager::Update  (const char *relName,    // relation to update
         }
         else firstNode->setParams(attrOffset1, attrLength1, attrIndex, recLength);
         firstNode->nextNode = NULL;
-        firstNode->print();
+        //firstNode->print();
     }
     QL_NODE* tempNode = firstNode;
     for (int i = 1; i < nConditions; i++) {
@@ -1035,7 +1035,7 @@ RC QL_Manager::Update  (const char *relName,    // relation to update
         }
         else tempNode->setParams(attrOffset1, attrLength1, attrIndex, recLength);
         tempNode->nextNode = NULL;
-        tempNode->print();
+        //tempNode->print();
     }
     free(types);
 
@@ -1181,12 +1181,10 @@ RC QL_Manager::checkRelAttr(const RelAttr relAttr, AttrCatEntry *&attrEntry, int
                 return QL_ATTRNAMECONFLICT;
             int tempIndex = relToIndex[*(attrToRel[selAttrName].begin())];
             if (tempIndex == 0){
-                cout<<"1"<<endl;
                 attrEntry = attrEntries;
                 index = attrToIndex[selAttrName];
             }
             else{
-                cout<<"2"<<endl;
                 attrEntry = attrEntries2;
                 index = attrToIndex2[selAttrName];
             }
@@ -1200,12 +1198,10 @@ RC QL_Manager::checkRelAttr(const RelAttr relAttr, AttrCatEntry *&attrEntry, int
             else{
                 int tempIndex = relToIndex[*(exist)];
                 if (tempIndex == 0){
-                    cout<<"TempI="<<tempIndex<<endl;
                     attrEntry = attrEntries;
                     index = attrToIndex[selAttrName];
                 }
                 else{
-                    cout<<"TempI="<<tempIndex<<endl;
                     attrEntry = attrEntries2;
                     index = attrToIndex2[selAttrName];
                 }

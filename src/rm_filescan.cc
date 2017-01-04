@@ -113,12 +113,19 @@ RC RM_FileScan::GetNextRec(RM_Record &rec){
 }
 
 RC RM_FileScan::CloseScan(){
+	RC rc = 0;
+	if((rc = fh->pf_fh->UnpinPage(currentPage))){
+        return (rc);
+    }
 	openScan = false;
-	return 0;
+	return rc;
 }
 
 RC RM_FileScan::ResetScan(){
 	RC rc = 0;
+	if((rc = fh->pf_fh->UnpinPage(currentPage))){
+        return (rc);
+    }
 	currentPage = 1;
 	currentSlot = -1;
 	return rc;

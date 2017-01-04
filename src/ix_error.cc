@@ -16,6 +16,7 @@ using namespace std;
 static char *IX_WarnMsg[] = {
   (char*)"Invalid IndexScan",
   (char*)"reach the end of file",
+  (char*)"the record to be deleted not found",
   (char*)"Invalid index"
 };
 
@@ -26,8 +27,7 @@ static char *IX_ErrorMsg[] = {
   (char*)"invalid indexHandle",
   (char*)"invalid CompOp",
   (char*)"invalid pinHint",
-  (char*)"插入了rid重复的记录",
-  (char*)"没有找到要删除的记录",
+  (char*)"insert record with repetitive RID",
   (char*)"null value pointer",
   (char*)"the scan not opened",
 };
