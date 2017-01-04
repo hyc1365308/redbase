@@ -4,6 +4,7 @@
 #include <cstring>
 #include <cstdio>
 #include <cstdlib>
+#include <iostream>
 
 RM_FileScan::RM_FileScan(){
 	this->openScan = false;
@@ -123,9 +124,6 @@ RC RM_FileScan::CloseScan(){
 
 RC RM_FileScan::ResetScan(){
 	RC rc = 0;
-	if((rc = fh->pf_fh->UnpinPage(currentPage))){
-        return (rc);
-    }
 	currentPage = 1;
 	currentSlot = -1;
 	return rc;

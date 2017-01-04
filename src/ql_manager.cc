@@ -191,7 +191,7 @@ RC QL_Manager::SelectOne  (int nSelAttrs,          // # attrs in select clause
     //}
     QL_NODE* tempNode = firstNode;
     for (int i = 0; i < nConditions; i++) {
-        if(useIX == true && useIXIndex != i){
+        if((useIX == true && useIXIndex != i) || (useIX == false)){
             tempNode->nextNode = new QL_NODE(conditions[i], *(AttrType *)(types + i));
             tempNode = tempNode->nextNode;
             string lhsName(conditions[i].lhsAttr.attrName);
@@ -252,12 +252,12 @@ RC QL_Manager::SelectOne  (int nSelAttrs,          // # attrs in select clause
         if ((rc = rec.GetData(recData)))
             return rc;
 
-        tempNode = firstNode;
+        tempNode = firstNode->nextNode;
         while(tempNode != NULL){
-            if (!tempNode->compare(recData, NULL)){
-                compare = false;
-                break;
+            if ((rc = tempNode->compare(recData, NULL, compare))){
+                return rc;
             }
+            if (!compare) break;
             tempNode = tempNode->nextNode;
         }
         if (!compare) continue;
@@ -504,10 +504,10 @@ RC QL_Manager::SelectTwo  (int nSelAttrs,          // # attrs in select clause
 
             tempNode = firstNode;
             while(tempNode != NULL){
-                if (!tempNode->compare(recData1, recData2)){
-                    compare = false;
+                if ((rc = tempNode->compare(recData1, recData2, compare))){
                     break;
                 }
+                if (!compare) break;
                 tempNode = tempNode->nextNode;
             }
             if (!compare) continue;
@@ -750,7 +750,7 @@ RC QL_Manager::Delete  (const char *relName,    // relation to delete from
     //}
     QL_NODE* tempNode = firstNode;
     for (int i = 0; i < nConditions; i++) {//修改了
-        if(useIX == true && useIXIndex != i){
+        if((useIX == true && useIXIndex != i) || (useIX == false)){
             tempNode->nextNode = new QL_NODE(conditions[i], *(AttrType *)(types + i));
             tempNode = tempNode->nextNode;
             string lhsName(conditions[i].lhsAttr.attrName);
@@ -825,10 +825,10 @@ RC QL_Manager::Delete  (const char *relName,    // relation to delete from
 
         tempNode = firstNode -> nextNode;
         while(tempNode != NULL){
-            if (!tempNode->compare(recData, NULL)){
-                compare = false;
-                break;
+            if ((rc =tempNode->compare(recData, NULL, compare))){
+                return rc;
             }
+            if (!compare) break;
             tempNode = tempNode->nextNode;
         }
         if (!compare) {
@@ -1076,10 +1076,10 @@ RC QL_Manager::Update  (const char *relName,    // relation to update
 
         tempNode = firstNode;
         while(tempNode != NULL){
-            if (!tempNode->compare(recData, NULL)){
-                compare = false;
-                break;
+            if ((rc = tempNode->compare(recData, NULL, compare))){
+                return rc;
             }
+            if (!compare) break;
             tempNode = tempNode->nextNode;
         }
         if (!compare) continue;

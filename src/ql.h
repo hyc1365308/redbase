@@ -100,14 +100,14 @@ public:
     void print();
     void setType(int type);
 
-    bool compare(const char *record1,const char* record2);
+    RC compare(const char *record1,const char* record2,bool &result);
 
     QL_NODE *nextNode;
 
 private:
 
-    bool compareOne(const char *record);
-    bool compareTwo(const char *record1,const char* record2);
+    RC compareOne(const char *record,bool &result);
+    RC compareTwo(const char *record1,const char* record2,bool &result);
 
 
     RelAttr  lhsAttr;

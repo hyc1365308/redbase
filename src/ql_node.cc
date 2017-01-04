@@ -70,37 +70,38 @@ RC QL_NODE::setParams(int attrOffset1, int attrLength1, int attrIndex1, int recL
     return rc;
 }
 
-bool QL_NODE::compare(const char *record1,const char* record2){
-
+RC QL_NODE::compare(const char *record1,const char* record2, bool &result){
     if (compareType == 0)
         return QL_NODENOTINITED;
     else if (compareType == 1){//one param
-        return compareOne(record1);
+        return compareOne(record1, result);
     }
     else if (compareType == 2){//two param
-        return compareTwo(record1, record2);
+        return compareTwo(record1, record2, result);
     }
     else if (compareType == 3){//two record rec1 and rec1
-        return compareTwo(record1, record1);
+        return compareTwo(record1, record1, result);
     }
     else return QL_NODEERROR;
 }
 
-bool QL_NODE::compareOne(const char *record){
+RC QL_NODE::compareOne(const char *record,bool &result){
     if (compareToNull == 1){ // == NULL
         char *nullString = "_null";
-        return comparator((void *)(record + attrOffset1), nullString, attrType, attrLength1);
+        result = comparator((void *)(record + attrOffset1), nullString, attrType, attrLength1);
+        return 0;
     }
     else if (compareToNull == 2){// != NULL       
         char *nullString = "_null";
-        return comparator((void *)(record + attrOffset1), nullString, attrType, attrLength1);
-
+        result = comparator((void *)(record + attrOffset1), nullString, attrType, attrLength1);
+        return 0;
     }
     else if (compareToNull == 0){
         if (compareType == 0)
             return QL_NODENOTINITED;
         else if (compareType == 1){//one param
-            return comparator((void *)(record + attrOffset1), rhsValue.data, attrType, attrLength1);
+            result = comparator((void *)(record + attrOffset1), rhsValue.data, attrType, attrLength1);
+            return 0;
         }
         else if ((compareType == 2) || (compareType == 3)){
             return QL_NODEFUNCSELECTERROR;
@@ -110,12 +111,14 @@ bool QL_NODE::compareOne(const char *record){
     else return QL_NODEERROR;
 }
 
-bool QL_NODE::compareTwo(const char *record1,const char *record2){
+RC QL_NODE::compareTwo(const char *record1,const char *record2,bool &result){
     if (compareToNull == 1){ // == NULL
-        return true;
+        result = true;
+        return 0;
     }
     else if (compareToNull == 2){// != NULL
-        return true;
+        result = true;
+        return 0;
     }
     else if (compareToNull == 0){
         if (compareType == 0)
@@ -124,10 +127,12 @@ bool QL_NODE::compareTwo(const char *record1,const char *record2){
             return QL_NODEFUNCSELECTERROR;
         }
         else if (compareType == 2){
-            return comparator((void *)(record1 + attrOffset1), (void *)(record2 + attrOffset2), attrType, attrLength1);
+            result = comparator((void *)(record1 + attrOffset1), (void *)(record2 + attrOffset2), attrType, attrLength1);
+            return 0;
         }
         else if (compareType == 3){
-            return comparator((void *)(record1 + attrOffset1), (void *)(record1 + attrOffset1), attrType, attrLength1);
+            result = comparator((void *)(record1 + attrOffset1), (void *)(record1 + attrOffset1), attrType, attrLength1);
+            return 0;
         }
         else return QL_NODEERROR;
     }

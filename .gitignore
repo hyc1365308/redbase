@@ -6,3 +6,4 @@ src/parse.c
 src/DROP
 src/CREATE
 src/newdb/*
+src/orderdb/*
